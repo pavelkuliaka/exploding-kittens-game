@@ -1,5 +1,6 @@
 package com.github.pavelkuliaka.engine
 
+import com.github.pavelkuliaka.engine.GameAdminEngine
 import com.github.pavelkuliaka.model.CardType
 import com.github.pavelkuliaka.model.GameSession
 import com.github.pavelkuliaka.model.GameStatus

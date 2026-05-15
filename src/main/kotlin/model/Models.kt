@@ -82,6 +82,7 @@ sealed class Turn {
         override val playerId: UUID,
         val card: CardType
     ) : Turn()
+
     data class Defuse(
         override val playerId: UUID,
         val insertPosition: Int

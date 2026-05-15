@@ -1,8 +1,9 @@
-package com.github.pavelkuliaka.service
+package service
 
 import com.github.pavelkuliaka.model.Player
 import com.github.pavelkuliaka.model.PlayerStats
 import com.github.pavelkuliaka.repository.IPlayerRepository
+import com.github.pavelkuliaka.service.StatisticsService
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.UUID

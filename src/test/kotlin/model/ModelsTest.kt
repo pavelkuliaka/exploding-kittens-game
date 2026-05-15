@@ -1,5 +1,11 @@
 package com.github.pavelkuliaka.model
 
+import com.github.pavelkuliaka.model.CardType
+import com.github.pavelkuliaka.model.GameSession
+import com.github.pavelkuliaka.model.GameStateSnapshot
+import com.github.pavelkuliaka.model.GameStatus
+import com.github.pavelkuliaka.model.restoreSnapshot
+import com.github.pavelkuliaka.model.snapshot
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import java.util.UUID

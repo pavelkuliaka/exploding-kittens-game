@@ -1,10 +1,11 @@
-package com.github.pavelkuliaka.validation
+package validation
 
 import com.github.pavelkuliaka.model.GameSession
 import com.github.pavelkuliaka.model.DeckComposition
 import com.github.pavelkuliaka.model.CardType
 import com.github.pavelkuliaka.model.GameStatus
 import com.github.pavelkuliaka.model.Turn
+import com.github.pavelkuliaka.validation.RuleValidator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.util.UUID
@@ -260,7 +261,10 @@ class RuleValidatorTest {
     fun `validateTurn Nope returns false when target is DrawCard`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1), turns = mutableListOf(Turn.DrawCard(p2, CardType.ATTACK)))
+        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1), turns = mutableListOf(Turn.DrawCard(
+            p2,
+            CardType.ATTACK
+        )))
         assertFalse(validator.validateTurn(session, Turn.Nope(p1, 0)))
     }
 

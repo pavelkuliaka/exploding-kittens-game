@@ -21,7 +21,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.github.pavelkuliaka.MainKt")
+    mainClass.set("com.github.pavelkuliaka.console.MainKt")
 }
 
 val printClasspath by tasks.registering {
@@ -31,7 +31,7 @@ val printClasspath by tasks.registering {
 }
 
 tasks.withType<JavaExec> {
-    mainClass.set("com.github.pavelkuliaka.MainKt")
+    mainClass.set("com.github.pavelkuliaka.console.MainKt")
     standardInput = System.`in`
 }
 

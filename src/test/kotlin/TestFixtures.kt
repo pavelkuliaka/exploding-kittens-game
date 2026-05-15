@@ -1,5 +1,3 @@
-package com.github.pavelkuliaka
-
 import com.github.pavelkuliaka.model.Player
 import com.github.pavelkuliaka.model.PlayerStats
 import java.util.UUID

@@ -1,7 +1,8 @@
-package com.github.pavelkuliaka.repository
+package repository
 
 import com.github.pavelkuliaka.model.Player
 import com.github.pavelkuliaka.model.PlayerStats
+import com.github.pavelkuliaka.repository.JsonPlayerRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

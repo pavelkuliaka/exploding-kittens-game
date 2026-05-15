@@ -1,8 +1,9 @@
-package com.github.pavelkuliaka.repository
+package repository
 
 import com.github.pavelkuliaka.model.CardType
 import com.github.pavelkuliaka.model.GameSession
 import com.github.pavelkuliaka.model.GameStatus
+import com.github.pavelkuliaka.repository.JsonGameRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

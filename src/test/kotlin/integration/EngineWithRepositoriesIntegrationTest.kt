@@ -1,6 +1,6 @@
 package com.github.pavelkuliaka.integration
 
-import com.github.pavelkuliaka.TestFixtures
+import TestFixtures
 import com.github.pavelkuliaka.engine.GameAdminEngine
 import com.github.pavelkuliaka.model.*
 import com.github.pavelkuliaka.repository.JsonGameRepository
