@@ -30,7 +30,9 @@ class PlayersListView : ViewBase() {
                         setCellValueFactory { ReadOnlyObjectWrapper((it.value.id.toString())) }
                     },
                     TableColumn<Player, String>("Status").apply {
-                        setCellValueFactory { ReadOnlyObjectWrapper(if (it.value.isPlaying) "Playing" else "Idle") }
+                        setCellValueFactory {
+                            ReadOnlyObjectWrapper(if (it.value.isPlaying) "Playing" else "Idle")
+                        }
                     },
                     TableColumn<Player, String>("Total Games").apply {
                         setCellValueFactory { ReadOnlyObjectWrapper(it.value.stats.totalGames.toString()) }

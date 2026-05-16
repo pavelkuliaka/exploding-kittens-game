@@ -18,7 +18,8 @@ class MainMenuView : ViewBase() {
         padding = Insets(25.0)
 
         children.addAll(
-            Label("EXPLODING KITTENS\nGame Administration Console").apply { styleClass.add("title") },
+            Label("EXPLODING KITTENS\nGame Administration Console").apply {
+                styleClass.add("title") },
             notificationLabel,
             VBox(8.0).apply {
                 padding = Insets(15.0, 0.0, 15.0, 20.0)

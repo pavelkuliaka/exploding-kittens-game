@@ -47,13 +47,17 @@ class GamePlayView : ViewBase() {
                     children.addAll(
                         VBox(4.0).apply {
                             children.addAll(
-                                Label("").apply { id = "current-player-label"; style = "-fx-font-weight: bold; -fx-font-size: 14px;" },
+                                Label("").apply {
+                                    id = "current-player-label"
+                                    style = "-fx-font-weight: bold; -fx-font-size: 14px;"},
                                 currentHandPanel
                             )
                         },
                         VBox(4.0).apply {
                             children.addAll(
-                                Label("").apply { id = "opponent-player-label"; style = "-fx-font-weight: bold; -fx-font-size: 14px;" },
+                                Label("").apply {
+                                    id = "opponent-player-label"
+                                    style = "-fx-font-weight: bold; -fx-font-size: 14px;" },
                                 opponentHandPanel
                             )
                         },
@@ -62,10 +66,16 @@ class GamePlayView : ViewBase() {
                 HBox(30.0).apply {
                     children.addAll(
                         VBox(4.0).apply {
-                            children.addAll(Label("Discard pile:").apply { style = "-fx-font-weight: bold;" }, discardPanel)
+                            children.addAll(Label("Discard pile:").apply {
+                                style = "-fx-font-weight: bold;" },
+                                discardPanel
+                            )
                         },
                         VBox(4.0).apply {
-                            children.addAll(Label("Recent turns:").apply { style = "-fx-font-weight: bold;" }, turnsPanel)
+                            children.addAll(Label("Recent turns:").apply {
+                                style = "-fx-font-weight: bold;" },
+                                turnsPanel
+                            )
                         },
                     )
                 },
@@ -102,34 +112,51 @@ class GamePlayView : ViewBase() {
         if (session.mustDefuse) {
             val hand = session.playerHands[currentPlayerId] ?: mutableMapOf()
             if ((hand[CardType.DEFUSE] ?: 0) < 1) {
-                showGameOver("BOOM! ${currentPlayer.name} drew an EXPLODING KITTEN and has no DEFUSE!\n${opponent.name} WINS!")
+                showGameOver("BOOM! ${currentPlayer.name} drew an EXPLODING KITTEN " +
+                        "and has no DEFUSE!\n${opponent.name} WINS!")
                 return
             }
         }
 
         statePanel.children.clear()
         if (session.mustDefuse) {
-            statePanel.children.add(Label("${currentPlayer.name} MUST DEFUSE").apply { styleClass.add("must-defuse") })
+            statePanel.children.add(Label("${currentPlayer.name} MUST DEFUSE").apply {
+                styleClass.add("must-defuse")
+            })
         } else {
-            statePanel.children.add(Label("Turn: ${currentPlayer.name} (attack turns remaining: ${session.attackTurnsRemaining})"))
+            statePanel.children.add(Label("Turn: ${currentPlayer.name} (attack turns " +
+                    "remaining: ${session.attackTurnsRemaining})"))
         }
-        statePanel.children.add(Label("Draw pile: ${session.drawPile.size} cards${if (topCard != null) " (top: $topCard)" else ""}"))
+        statePanel.children.add(Label("Draw pile: ${session.drawPile.size} cards${if (topCard != null) " " +
+                "(top: $topCard)" else ""}"))
 
         currentHandPanel.children.clear()
-        currentHandPanel.children.add(Label("${currentPlayer.name}:").apply { style = "-fx-font-weight: bold; -fx-font-size: 14px;" })
+        currentHandPanel.children.add(Label("${currentPlayer.name}:").apply {
+            style = "-fx-font-weight: bold; -fx-font-size: 14px;"
+        })
         val curHand = session.playerHands[currentPlayerId] ?: mutableMapOf()
         if (curHand.isEmpty()) currentHandPanel.children.add(Label("(empty)"))
-        else curHand.forEach { (type, count) -> currentHandPanel.children.add(Label("$type ($count)").apply { styleClass.add("hand-label") }) }
+        else curHand.forEach { (type, count) -> currentHandPanel.children.add(Label("$type ($count)").apply {
+            styleClass.add("hand-label")
+        }) }
 
         opponentHandPanel.children.clear()
-        opponentHandPanel.children.add(Label("${opponent.name}:").apply { style = "-fx-font-weight: bold; -fx-font-size: 14px;" })
+        opponentHandPanel.children.add(Label("${opponent.name}:").apply {
+            style = "-fx-font-weight: bold; -fx-font-size: 14px;"
+        })
         val oppHand = session.playerHands[opponentId] ?: mutableMapOf()
         if (oppHand.isEmpty()) opponentHandPanel.children.add(Label("(empty)"))
-        else oppHand.forEach { (type, count) -> opponentHandPanel.children.add(Label("$type ($count)").apply { styleClass.add("opponent-hand-label") }) }
+        else oppHand.forEach { (type, count) -> opponentHandPanel.children.add(Label("$type ($count)").apply {
+            styleClass.add("opponent-hand-label")
+        }) }
 
         discardPanel.children.clear()
         if (session.discardPile.isEmpty()) discardPanel.children.add(Label("(empty)"))
-        else session.discardPile.forEach { (type, count) -> discardPanel.children.add(Label("$type ($count)").apply { styleClass.add("discard-label") }) }
+        else session.discardPile.forEach {
+            (type, count) -> discardPanel.children.add(Label("$type ($count)").apply {
+                styleClass.add("discard-label")
+            })
+        }
 
         turnsPanel.children.clear()
         if (session.turns.isEmpty()) turnsPanel.children.add(Label("(none)"))
@@ -320,15 +347,19 @@ class GamePlayView : ViewBase() {
 
         fun update() {
             pileBox.children.clear()
-            pileBox.children.add(Label("New pile (${newPile.size} cards):").apply { style = "-fx-font-weight: bold;" })
+            pileBox.children.add(Label("New pile (${newPile.size} cards):").apply {
+                style = "-fx-font-weight: bold;"
+            })
             if (newPile.isEmpty()) pileBox.children.add(Label("(empty)"))
             else newPile.forEachIndexed { i, c -> pileBox.children.add(Label("  ${i + 1}. $c")) }
 
             val g = pool.groupBy { it }.entries.toList()
             poolBox.children.clear()
-            poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply { style = "-fx-font-weight: bold;" })
+            poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply {
+                style = "-fx-font-weight: bold;"
+            })
             if (g.isEmpty()) poolBox.children.add(Label("(empty)"))
-            else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})")) }
+            else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})"))}
         }
         update()
 
@@ -347,7 +378,11 @@ class GamePlayView : ViewBase() {
                                 val c = choiceField.text.toIntOrNull() ?: return@setOnAction
                                 if (c !in 1..g.size) return@setOnAction
                                 val card = g[c - 1].key; val idx = pool.indexOf(card)
-                                if (idx >= 0) { pool.removeAt(idx); newPile.add(card); choiceField.text = ""; update() }
+                                if (idx >= 0) {
+                                    pool.removeAt(idx)
+                                    newPile.add(card)
+                                    choiceField.text = ""; update()
+                                }
                             }
                         },
                         Button("Reset").apply {
@@ -392,7 +427,9 @@ class GamePlayView : ViewBase() {
         AppDependencies.gameRepository.saveSessions()
 
         if (session.status != GameStatus.ACTIVE) {
-            val winner = session.winnerId?.let { AppDependencies.playerRepository.getPlayer(it)?.name } ?: "Unknown"
+            val winner = session.winnerId?.let {
+                AppDependencies.playerRepository.getPlayer(it)?.name
+            } ?: "Unknown"
             showGameOver("Game Over!\nWinner: $winner")
         } else {
             refresh()

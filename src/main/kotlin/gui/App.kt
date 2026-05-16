@@ -15,11 +15,11 @@ import javafx.stage.Stage
 import java.util.UUID
 
 object AppDependencies {
-    val gameRepository = JsonGameRepository("games.json")
-    val playerRepository = JsonPlayerRepository("players.json")
+    var gameRepository: JsonGameRepository = JsonGameRepository("games.json")
+    var playerRepository: JsonPlayerRepository = JsonPlayerRepository("players.json")
     val ruleValidator = RuleValidator()
-    val statisticsService = StatisticsService(playerRepository)
-    val engine = GameAdminEngine(gameRepository, playerRepository, ruleValidator, statisticsService)
+    val statisticsService get() = StatisticsService(playerRepository)
+    val engine get() = GameAdminEngine(gameRepository, playerRepository, ruleValidator, statisticsService)
 
     var activeSessionId: UUID? = null
     var notificationMessage: String? = null
@@ -29,7 +29,7 @@ object AppDependencies {
 }
 
 object Navigation {
-    lateinit var container: StackPane
+    var container: StackPane = StackPane()
 
     fun navigateTo(view: ViewBase) {
         container.children.setAll(view.root)

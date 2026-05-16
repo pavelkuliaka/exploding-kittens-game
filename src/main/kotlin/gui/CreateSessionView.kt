@@ -118,121 +118,36 @@ class CreateSessionView : ViewBase() {
         stepPanel.children.clear()
         with(stepPanel) {
             val titleLabel = Label("").apply { styleClass.add("section-title") }
-
             val handPane = FlowPane(6.0, 6.0).apply {
                 prefWrapLength = 300.0
-                style = "-fx-padding: 10px; -fx-background-color: #fafafa; -fx-border-color: #ddd; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-min-height: 120px;"
+                style = "-fx-padding: 10px; -fx-background-color: #fafafa; -fx-border-color: #ddd; " +
+                        "-fx-border-radius: 6px; -fx-background-radius: 6px; -fx-min-height: 120px;"
             }
             val poolPane = FlowPane(6.0, 6.0).apply {
                 prefWrapLength = 350.0
-                style = "-fx-padding: 10px; -fx-background-color: #fafafa; -fx-border-color: #ddd; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-min-height: 120px;"
+                style = "-fx-padding: 10px; -fx-background-color: #fafafa; -fx-border-color: #ddd; " +
+                        "-fx-border-radius: 6px; -fx-background-radius: 6px; -fx-min-height: 120px;"
             }
-            val errorLabel = Label("").apply { styleClass.add("validation-error" ) }
+            val errorLabel = Label("").apply { styleClass.add("validation-error") }
 
-            val defaultHandStyle = handPane.style
-            val defaultPoolStyle = poolPane.style
-
-            fun rebuildCards() {
-                val size = hand.values.sum()
-                titleLabel.text = "${player.name.uppercase()} — Select cards ($size/8)"
-
-                handPane.children.clear()
-                if (hand.isEmpty()) {
-                    handPane.children.add(Label("(empty)").apply { style = "-fx-text-fill: #999;" })
-                } else {
-                    hand.forEach { (type, count) ->
-                        val locked = type == CardType.DEFUSE && count <= 1
-                        val tile = cardTile(type, count, isLocked = locked)
-                        if (!locked) {
-                            tile.setOnDragDetected { _ ->
-                                val db = tile.startDragAndDrop(TransferMode.MOVE)
-                                val cc = ClipboardContent()
-                                cc.putString("hand:${type.name}")
-                                db.setContent(cc)
-                                db.dragView = tile.snapshot(null, null)
-                            }
-                        }
-                        handPane.children.add(tile)
-                    }
-                }
-
-                val selectable = availableCards.filter { it.value > 0 && it.key != CardType.EXPLODING_KITTEN }
-                poolPane.children.clear()
-                if (selectable.isEmpty()) {
-                    poolPane.children.add(Label("No cards available!").apply { style = "-fx-text-fill: #999;" })
-                } else {
-                    selectable.forEach { (type, count) ->
-                        val tile = cardTile(type, count, maxTotal = DeckComposition.CARDS[type])
-                        tile.setOnDragDetected { _ ->
-                            val db = tile.startDragAndDrop(TransferMode.MOVE)
-                            val cc = ClipboardContent()
-                            cc.putString("pool:${type.name}")
-                            db.setContent(cc)
-                            db.dragView = tile.snapshot(null, null)
-                        }
-                        poolPane.children.add(tile)
-                    }
-                }
-            }
-
-            handPane.setOnDragOver { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("pool:") && hand.values.sum() < 8) {
-                    event.acceptTransferModes(TransferMode.MOVE)
-                    handPane.style = "$defaultHandStyle; -fx-border-color: #27ae60; -fx-background-color: #f0fdf4;"
-                }
-                event.consume()
-            }
-            handPane.setOnDragExited { handPane.style = defaultHandStyle }
-            handPane.setOnDragDropped { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("pool:") && hand.values.sum() < 8) {
-                    val type = CardType.valueOf(data.removePrefix("pool:"))
-                    val count = availableCards[type] ?: return@setOnDragDropped
-                    if (count > 0) {
-                        hand[type] = (hand[type] ?: 0) + 1; availableCards[type] = count - 1
-                        rebuildCards(); event.isDropCompleted = true
-                    }
-                }
-                handPane.style = defaultHandStyle; event.consume()
-            }
-
-            poolPane.setOnDragOver { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("hand:")) {
-                    val type = CardType.valueOf(data.removePrefix("hand:"))
-                    val hc = hand[type] ?: 0
-                    if (type != CardType.DEFUSE || hc > 1) {
-                        event.acceptTransferModes(TransferMode.MOVE)
-                        poolPane.style = "$defaultPoolStyle; -fx-border-color: #e67e22; -fx-background-color: #fef5e7;"
-                    }
-                }
-                event.consume()
-            }
-            poolPane.setOnDragExited { poolPane.style = defaultPoolStyle }
-            poolPane.setOnDragDropped { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("hand:")) {
-                    val type = CardType.valueOf(data.removePrefix("hand:"))
-                    val hc = hand[type] ?: 0
-                    if (hc > 0 && (type != CardType.DEFUSE || hc > 1)) {
-                        if (hc > 1) hand[type] = hc - 1 else hand.remove(type)
-                        availableCards[type] = (availableCards[type] ?: 0) + 1
-                        rebuildCards(); event.isDropCompleted = true
-                    }
-                }
-                poolPane.style = defaultPoolStyle; event.consume()
-            }
+            rebuildCardDistributionUI(player, hand, titleLabel, handPane, poolPane)
+            setupCardDragHandlers(player, hand, titleLabel, handPane, poolPane)
 
             children.addAll(
                 titleLabel,
                 HBox(20.0).apply {
                     children.addAll(
                         VBox(6.0).apply {
-                            children.addAll(Label("YOUR HAND — drag cards here from the pool").apply { style = "-fx-font-weight: bold; -fx-font-size: 12px;" }, handPane)
+                            children.addAll(Label(
+                                "YOUR HAND — drag cards here from the pool").apply {
+                                    style = "-fx-font-weight: bold; -fx-font-size: 12px;" },
+                                handPane)
                         },
                         VBox(6.0).apply {
-                            children.addAll(Label("AVAILABLE CARDS — drag cards here to return").apply { style = "-fx-font-weight: bold; -fx-font-size: 12px;" }, poolPane)
+                            children.addAll(Label(
+                                "AVAILABLE CARDS — drag cards here to return").apply {
+                                    style = "-fx-font-weight: bold; -fx-font-size: 12px;" },
+                                poolPane)
                         }
                     )
                 },
@@ -243,8 +158,14 @@ class CreateSessionView : ViewBase() {
                             setOnAction {
                                 val size = hand.values.sum()
                                 val hasDefuse = (hand[CardType.DEFUSE] ?: 0) >= 1
-                                if (size != 8) { errorLabel.text = "Need 8 cards (currently $size)"; return@setOnAction }
-                                if (!hasDefuse) { errorLabel.text = "Need at least 1 DEFUSE"; return@setOnAction }
+                                if (size != 8) {
+                                    errorLabel.text = "Need 8 cards (currently $size)"
+                                    return@setOnAction
+                                }
+                                if (!hasDefuse) {
+                                    errorLabel.text = "Need at least 1 DEFUSE"
+                                    return@setOnAction
+                                }
                                 session?.let { s -> s.playerHands[player.id] = hand }
                                 if (currentStep == 1) showStep2() else showStep3()
                             }
@@ -253,8 +174,6 @@ class CreateSessionView : ViewBase() {
                     )
                 }
             )
-
-            rebuildCards()
         }
     }
 
@@ -282,100 +201,12 @@ class CreateSessionView : ViewBase() {
             val deckVBox = VBox(5.0).apply { styleClass.add("setup-panel") }
             val errorLabel = Label("").apply { styleClass.add("validation-error") }
 
-            fun refresh() {
-                poolPane.children.clear()
-                val selectable = availableCards.filterValues { it > 0 }
-                if (selectable.isEmpty()) {
-                    poolPane.children.add(Label("(no cards left)").apply { style = "-fx-text-fill: #999;" })
-                } else {
-                    selectable.forEach { (type, count) ->
-                        val tile = cardTile(type, count, maxTotal = DeckComposition.CARDS[type])
-                        tile.setOnMouseClicked {
-                            drawPile.add(type)
-                            availableCards[type] = (availableCards[type] ?: 0) - 1
-                            refresh()
-                        }
-                        poolPane.children.add(tile)
-                    }
-                }
-
-                deckVBox.children.clear()
-                val deckTitle = "Draw pile (${drawPile.size} cards)" +
-                    if (drawPile.isNotEmpty()) " — drag to reorder, double-click or drag to pool to remove" else ""
-                deckVBox.children.add(Label(deckTitle).apply { style = "-fx-font-weight: bold;" })
-                if (drawPile.isEmpty()) {
-                    deckVBox.children.add(Label("(empty)").apply { style = "-fx-text-fill: #999;" })
-                } else {
-                    drawPile.forEachIndexed { i, cardType ->
-                        val tile = HBox().apply {
-                            styleClass.addAll("deck-tile", "card-${cardType.name}")
-                            children.add(Label(cardType.name.split("_").joinToString(" ")))
-
-                            setOnMouseClicked { event ->
-                                if (event.clickCount == 2) {
-                                    drawPile.removeAt(i)
-                                    availableCards[cardType] = (availableCards[cardType] ?: 0) + 1
-                                    refresh()
-                                }
-                            }
-
-                            setOnDragDetected { event ->
-                                val db = startDragAndDrop(TransferMode.MOVE)
-                                val cc = ClipboardContent()
-                                cc.putString("deck:$i")
-                                db.setContent(cc)
-                                db.dragView = snapshot(null, null)
-                                event.consume()
-                            }
-
-                            setOnDragOver { event ->
-                                val data = event.dragboard.string
-                                if (data != null && data.startsWith("deck:")) {
-                                    event.acceptTransferModes(TransferMode.MOVE)
-                                }
-                                event.consume()
-                            }
-
-                            setOnDragDropped { event ->
-                                val data = event.dragboard.string
-                                if (data != null && data.startsWith("deck:")) {
-                                    val src = data.removePrefix("deck:").toInt()
-                                    if (src != i) {
-                                        val card = drawPile.removeAt(src)
-                                        drawPile.add(if (src < i) i - 1 else i, card)
-                                        refresh()
-                                    }
-                                    event.isDropCompleted = true
-                                }
-                                event.consume()
-                            }
-                        }
-                        deckVBox.children.add(tile)
-                    }
-                }
-            }
-
-            poolPane.setOnDragOver { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("deck:")) {
-                    event.acceptTransferModes(TransferMode.MOVE)
-                }
-                event.consume()
-            }
-            poolPane.setOnDragDropped { event ->
-                val data = event.dragboard.string
-                if (data != null && data.startsWith("deck:")) {
-                    val src = data.removePrefix("deck:").toInt()
-                    val card = drawPile.removeAt(src)
-                    availableCards[card] = (availableCards[card] ?: 0) + 1
-                    refresh()
-                    event.isDropCompleted = true
-                }
-                event.consume()
-            }
+            setupPoolDropFromDeck(poolPane, deckVBox)
+            refreshDeckSetupUI(poolPane, deckVBox)
 
             children.addAll(
-                Label("Available cards (click to add to draw pile):").apply { styleClass.add("section-title") },
+                Label("Available cards (click to add to draw pile):").apply {
+                    styleClass.add("section-title") },
                 poolPane,
                 Label("Draw pile:").apply { styleClass.add("section-title") },
                 deckVBox,
@@ -391,8 +222,15 @@ class CreateSessionView : ViewBase() {
                                 }
                                 val s = session ?: return@setOnAction
                                 s.drawPile.clear(); s.drawPile.addAll(drawPile)
-                                val v = AppDependencies.ruleValidator.validateDrawPile(s, DeckComposition.CARDS, availableCards)
-                                if (!v.isValid) { errorLabel.text = v.errors.joinToString("\n"); return@setOnAction }
+                                val v = AppDependencies.ruleValidator.validateDrawPile(
+                                    s,
+                                    DeckComposition.CARDS,
+                                    availableCards
+                                )
+                                if (!v.isValid) {
+                                    errorLabel.text = v.errors.joinToString("\n")
+                                    return@setOnAction
+                                }
                                 AppDependencies.activeSessionId = s.id
                                 AppDependencies.gameRepository.saveSessions()
                                 navigateTo(GamePlayView())
@@ -401,15 +239,218 @@ class CreateSessionView : ViewBase() {
                         Button("Reset").apply {
                             setOnAction {
                                 drawPile.forEach { availableCards[it] = (availableCards[it] ?: 0) + 1 }
-                                drawPile.clear(); refresh()
+                                drawPile.clear(); refreshDeckSetupUI(poolPane, deckVBox)
                             }
                         },
                         Button("Cancel").apply { setOnAction { cancelSession() } },
                     )
                 }
             )
+        }
+    }
 
-            refresh()
+    private fun rebuildCardDistributionUI(
+        player: Player,
+        hand: MutableMap<CardType, Int>,
+        titleLabel: Label,
+        handPane: FlowPane,
+        poolPane: FlowPane,
+    ) {
+        val size = hand.values.sum()
+        titleLabel.text = "${player.name.uppercase()} — Select cards ($size/8)"
+
+        handPane.children.clear()
+        if (hand.isEmpty()) {
+            handPane.children.add(Label("(empty)").apply { style = "-fx-text-fill: #999;" })
+        } else {
+            hand.forEach { (type, count) ->
+                val locked = type == CardType.DEFUSE && count <= 1
+                val tile = cardTile(type, count, isLocked = locked)
+                if (!locked) {
+                    tile.setOnDragDetected { _ ->
+                        val db = tile.startDragAndDrop(TransferMode.MOVE)
+                        val cc = ClipboardContent()
+                        cc.putString("hand:${type.name}")
+                        db.setContent(cc)
+                        db.dragView = tile.snapshot(null, null)
+                    }
+                }
+                handPane.children.add(tile)
+            }
+        }
+
+        val selectable = availableCards.filter { it.value > 0 && it.key != CardType.EXPLODING_KITTEN }
+        poolPane.children.clear()
+        if (selectable.isEmpty()) {
+            poolPane.children.add(Label("No cards available!").apply { style = "-fx-text-fill: #999;" })
+        } else {
+            selectable.forEach { (type, count) ->
+                val tile = cardTile(type, count, maxTotal = DeckComposition.CARDS[type])
+                tile.setOnDragDetected { _ ->
+                    val db = tile.startDragAndDrop(TransferMode.MOVE)
+                    val cc = ClipboardContent()
+                    cc.putString("pool:${type.name}")
+                    db.setContent(cc)
+                    db.dragView = tile.snapshot(null, null)
+                }
+                poolPane.children.add(tile)
+            }
+        }
+    }
+
+    private fun setupCardDragHandlers(
+        player: Player,
+        hand: MutableMap<CardType, Int>,
+        titleLabel: Label,
+        handPane: FlowPane,
+        poolPane: FlowPane,
+    ) {
+        val defaultHandStyle = handPane.style
+        val defaultPoolStyle = poolPane.style
+
+        handPane.setOnDragOver { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("pool:") && hand.values.sum() < 8) {
+                event.acceptTransferModes(TransferMode.MOVE)
+                handPane.style = "$defaultHandStyle; -fx-border-color: #27ae60; -fx-background-color: #f0fdf4;"
+            }
+            event.consume()
+        }
+        handPane.setOnDragExited { handPane.style = defaultHandStyle }
+        handPane.setOnDragDropped { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("pool:") && hand.values.sum() < 8) {
+                val type = CardType.valueOf(data.removePrefix("pool:"))
+                val count = availableCards[type] ?: return@setOnDragDropped
+                if (count > 0) {
+                    hand[type] = (hand[type] ?: 0) + 1; availableCards[type] = count - 1
+                    rebuildCardDistributionUI(player, hand, titleLabel, handPane, poolPane)
+                    event.isDropCompleted = true
+                }
+            }
+            handPane.style = defaultHandStyle; event.consume()
+        }
+
+        poolPane.setOnDragOver { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("hand:")) {
+                val type = CardType.valueOf(data.removePrefix("hand:"))
+                val hc = hand[type] ?: 0
+                if (type != CardType.DEFUSE || hc > 1) {
+                    event.acceptTransferModes(TransferMode.MOVE)
+                    poolPane.style = "$defaultPoolStyle; -fx-border-color: #e67e22; -fx-background-color: #fef5e7;"
+                }
+            }
+            event.consume()
+        }
+        poolPane.setOnDragExited { poolPane.style = defaultPoolStyle }
+        poolPane.setOnDragDropped { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("hand:")) {
+                val type = CardType.valueOf(data.removePrefix("hand:"))
+                val hc = hand[type] ?: 0
+                if (hc > 0 && (type != CardType.DEFUSE || hc > 1)) {
+                    if (hc > 1) hand[type] = hc - 1 else hand.remove(type)
+                    availableCards[type] = (availableCards[type] ?: 0) + 1
+                    rebuildCardDistributionUI(player, hand, titleLabel, handPane, poolPane)
+                    event.isDropCompleted = true
+                }
+            }
+            poolPane.style = defaultPoolStyle; event.consume()
+        }
+    }
+
+    private fun refreshDeckSetupUI(poolPane: FlowPane, deckVBox: VBox) {
+        poolPane.children.clear()
+        val selectable = availableCards.filterValues { it > 0 }
+        if (selectable.isEmpty()) {
+            poolPane.children.add(Label("(no cards left)").apply { style = "-fx-text-fill: #999;" })
+        } else {
+            selectable.forEach { (type, count) ->
+                val tile = cardTile(type, count, maxTotal = DeckComposition.CARDS[type])
+                tile.setOnMouseClicked {
+                    drawPile.add(type)
+                    availableCards[type] = (availableCards[type] ?: 0) - 1
+                    refreshDeckSetupUI(poolPane, deckVBox)
+                }
+                poolPane.children.add(tile)
+            }
+        }
+
+        deckVBox.children.clear()
+        val deckTitle = "Draw pile (${drawPile.size} cards)" +
+            if (drawPile.isNotEmpty()) " — drag to reorder, double-click or drag to pool to remove" else ""
+        deckVBox.children.add(Label(deckTitle).apply { style = "-fx-font-weight: bold;" })
+        if (drawPile.isEmpty()) {
+            deckVBox.children.add(Label("(empty)").apply { style = "-fx-text-fill: #999;" })
+        } else {
+            drawPile.forEachIndexed { i, cardType ->
+                val tile = HBox().apply {
+                    styleClass.addAll("deck-tile", "card-${cardType.name}")
+                    children.add(Label(cardType.name.split("_").joinToString(" ")))
+
+                    setOnMouseClicked { event ->
+                        if (event.clickCount == 2) {
+                            drawPile.removeAt(i)
+                            availableCards[cardType] = (availableCards[cardType] ?: 0) + 1
+                            refreshDeckSetupUI(poolPane, deckVBox)
+                        }
+                    }
+
+                    setOnDragDetected { event ->
+                        val db = startDragAndDrop(TransferMode.MOVE)
+                        val cc = ClipboardContent()
+                        cc.putString("deck:$i")
+                        db.setContent(cc)
+                        db.dragView = snapshot(null, null)
+                        event.consume()
+                    }
+
+                    setOnDragOver { event ->
+                        val data = event.dragboard.string
+                        if (data != null && data.startsWith("deck:")) {
+                            event.acceptTransferModes(TransferMode.MOVE)
+                        }
+                        event.consume()
+                    }
+
+                    setOnDragDropped { event ->
+                        val data = event.dragboard.string
+                        if (data != null && data.startsWith("deck:")) {
+                            val src = data.removePrefix("deck:").toInt()
+                            if (src != i) {
+                                val card = drawPile.removeAt(src)
+                                drawPile.add(if (src < i) i - 1 else i, card)
+                                refreshDeckSetupUI(poolPane, deckVBox)
+                            }
+                            event.isDropCompleted = true
+                        }
+                        event.consume()
+                    }
+                }
+                deckVBox.children.add(tile)
+            }
+        }
+    }
+
+    private fun setupPoolDropFromDeck(poolPane: FlowPane, deckVBox: VBox) {
+        poolPane.setOnDragOver { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("deck:")) {
+                event.acceptTransferModes(TransferMode.MOVE)
+            }
+            event.consume()
+        }
+        poolPane.setOnDragDropped { event ->
+            val data = event.dragboard.string
+            if (data != null && data.startsWith("deck:")) {
+                val src = data.removePrefix("deck:").toInt()
+                val card = drawPile.removeAt(src)
+                availableCards[card] = (availableCards[card] ?: 0) + 1
+                refreshDeckSetupUI(poolPane, deckVBox)
+                event.isDropCompleted = true
+            }
+            event.consume()
         }
     }
 }
@@ -421,7 +462,9 @@ private fun cardTile(cardType: CardType, count: Int, maxTotal: Int? = null, isLo
         if (isLocked) styleClass.add("card-locked-tile") else styleClass.add("card-clickable")
         minWidth = 80.0; minHeight = 55.0
         alignment = javafx.geometry.Pos.CENTER
-        children.add(Label(cardType.name.split("_").joinToString(" ")).apply { styleClass.add("card-name") })
+        children.add(Label(cardType.name.split("_").joinToString(" ")).apply {
+            styleClass.add("card-name")
+        })
         val countText = when {
             isLocked -> "($count) locked"
             maxTotal != null -> "$count / $maxTotal"

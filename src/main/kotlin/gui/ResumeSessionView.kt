@@ -83,7 +83,9 @@ class ResumeSessionView : ViewBase() {
 
         dialog.scene = Scene(VBox(8.0).apply {
             padding = Insets(15.0)
-            children.add(Label("No current turn is set. Who goes first?").apply { styleClass.add("section-title") })
+            children.add(Label("No current turn is set. Who goes first?").apply {
+                styleClass.add("section-title")
+            })
             players.forEach { pid ->
                 val name = AppDependencies.playerRepository.getPlayer(pid)?.name ?: pid.toString()
                 RadioButton(name).apply {

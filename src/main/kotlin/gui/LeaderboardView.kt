@@ -37,7 +37,9 @@ class LeaderboardView : ViewBase() {
                     setCellValueFactory { ReadOnlyObjectWrapper(it.value.second.stats.wins.toString()) }
                 },
                 TableColumn<Pair<Int, Player>, String>("Total Games").apply {
-                    setCellValueFactory { ReadOnlyObjectWrapper(it.value.second.stats.totalGames.toString()) }
+                    setCellValueFactory {
+                        ReadOnlyObjectWrapper(it.value.second.stats.totalGames.toString())
+                    }
                 },
             )
             items = leaderboardData
