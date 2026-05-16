@@ -1,6 +1,6 @@
 plugins {
     kotlin("jvm") version "2.3.10"
-    id("org.jlleitschuh.gradle.ktlint") version "12.1.0"
+    application
 }
 
 group = "com.github.pavelkuliaka"
@@ -11,11 +11,28 @@ repositories {
 }
 
 dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2")
     testImplementation(kotlin("test"))
 }
 
 kotlin {
     jvmToolchain(25)
+}
+
+application {
+    mainClass.set("com.github.pavelkuliaka.console.MainKt")
+}
+
+val printClasspath by tasks.registering {
+    doLast {
+        println(sourceSets["main"].runtimeClasspath.files.joinToString(":") { it.absolutePath })
+    }
+}
+
+tasks.withType<JavaExec> {
+    mainClass.set("com.github.pavelkuliaka.console.MainKt")
+    standardInput = System.`in`
 }
 
 tasks.test {
