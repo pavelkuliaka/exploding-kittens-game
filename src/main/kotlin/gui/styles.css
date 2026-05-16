@@ -1,0 +1,153 @@
+.root {
+    -fx-font-family: 'Segoe UI', 'Arial', sans-serif;
+    -fx-font-size: 13px;
+    -fx-padding: 15px;
+}
+
+.title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 0 4px 0;
+}
+
+.game-state-panel {
+    -fx-padding: 10px;
+    -fx-background-color: #ecf0f1;
+    -fx-border-color: #bdc3c7;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.must-defuse {
+    -fx-background-color: #e74c3c;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 5px;
+}
+
+.action-button {
+    -fx-pref-width: 160px;
+    -fx-pref-height: 32px;
+}
+
+.back-button {
+    -fx-pref-width: 120px;
+}
+
+.hand-label {
+    -fx-padding: 3px 6px;
+    -fx-background-color: #f9e79f;
+    -fx-border-color: #f1c40f;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.opponent-hand-label {
+    -fx-padding: 3px 6px;
+    -fx-background-color: #d5f5e3;
+    -fx-border-color: #27ae60;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.discard-label {
+    -fx-padding: 3px 6px;
+    -fx-background-color: #ebdef0;
+    -fx-border-color: #8e44ad;
+    -fx-border-radius: 3px;
+    -fx-background-radius: 3px;
+}
+
+.nav-button {
+    -fx-pref-width: 220px;
+    -fx-pref-height: 36px;
+    -fx-font-size: 13px;
+    -fx-alignment: center-left;
+}
+
+.validation-error {
+    -fx-text-fill: #e74c3c;
+    -fx-font-size: 12px;
+}
+
+.card-tile {
+    -fx-padding: 8px 14px;
+    -fx-background-color: white;
+    -fx-border-width: 2px;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-alignment: center;
+    -fx-min-width: 80px;
+    -fx-min-height: 55px;
+}
+
+.card-clickable {
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.08), 2, 0, 1, 1);
+}
+
+.card-clickable:hover {
+    -fx-background-color: #f8f9fa;
+    -fx-effect: dropshadow(one-pass-box, rgba(52,152,219,0.3), 6, 0, 2, 2);
+}
+
+.card-locked-tile {
+    -fx-background-color: #fef9e7;
+    -fx-cursor: default;
+    -fx-opacity: 0.85;
+}
+
+.card-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 11px;
+    -fx-text-alignment: center;
+}
+
+.card-count {
+    -fx-font-size: 10px;
+    -fx-text-fill: #7f8c8d;
+}
+
+.card-EXPLODING_KITTEN { -fx-border-color: #e74c3c; }
+.card-DEFUSE           { -fx-border-color: #3498db; }
+.card-NOPE             { -fx-border-color: #9b59b6; }
+.card-ATTACK           { -fx-border-color: #e67e22; }
+.card-SKIP             { -fx-border-color: #27ae60; }
+.card-SEE_THE_FUTURE   { -fx-border-color: #1abc9c; }
+.card-SHUFFLE          { -fx-border-color: #2c3e50; }
+.card-FAVOR            { -fx-border-color: #e91e63; }
+.card-SPECIAL_1        { -fx-border-color: #95a5a6; }
+.card-SPECIAL_2        { -fx-border-color: #7f8c8d; }
+.card-SPECIAL_3        { -fx-border-color: #717d7e; }
+
+.deck-tile {
+    -fx-background-color: white;
+    -fx-border-width: 0 0 0 5px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 14px 20px;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(one-pass-box, rgba(0,0,0,0.07), 4, 0, 2, 2);
+    -fx-min-height: 48px;
+}
+
+.deck-tile:hover {
+    -fx-background-color: #f0f2f5;
+    -fx-effect: dropshadow(one-pass-box, rgba(52,152,219,0.3), 10, 0, 3, 3);
+}
+
+.setup-panel {
+    -fx-padding: 12px;
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #e9ecef;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}

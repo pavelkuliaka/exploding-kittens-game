@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.3.10"
     application
+    id("org.openjfx.javafxplugin") version "0.1.0"
 }
 
 group = "com.github.pavelkuliaka"
@@ -8,6 +9,11 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+}
+
+javafx {
+    version = "24"
+    modules("javafx.controls", "javafx.graphics", "javafx.fxml")
 }
 
 dependencies {
@@ -21,7 +27,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("com.github.pavelkuliaka.console.MainKt")
+    mainClass.set("com.github.pavelkuliaka.gui.AppKt")
 }
 
 val printClasspath by tasks.registering {
@@ -31,7 +37,6 @@ val printClasspath by tasks.registering {
 }
 
 tasks.withType<JavaExec> {
-    mainClass.set("com.github.pavelkuliaka.console.MainKt")
     standardInput = System.`in`
 }
 
