@@ -86,7 +86,7 @@ class CreateSessionFlowTest : GuiTestBase() {
                     Thread.sleep(200)
                     Assertions.assertFalse(p1.isPlaying)
                     Assertions.assertFalse(p2.isPlaying)
-                    Assertions.assertTrue(AppDependencies.gameRepository.sessions.isEmpty())
+                    Assertions.assertTrue(AppDependencies.gameRepository.getAllSessions().isEmpty())
                 }
             }
         }

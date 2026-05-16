@@ -381,6 +381,7 @@ private class TestGameRepo : IGameRepository {
     override fun addSession(gameSession: GameSession) { sessions[gameSession.id] = gameSession }
     override fun getSession(sessionId: UUID): GameSession? = sessions[sessionId]
     override fun removeSession(sessionId: UUID) { sessions.remove(sessionId) }
+    override fun getAllSessions(): List<GameSession> = sessions.values.toList()
 }
 
 private class TestPlayerRepo : IPlayerRepository {

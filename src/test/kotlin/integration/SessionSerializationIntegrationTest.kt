@@ -1,32 +1,36 @@
 package com.github.pavelkuliaka.integration
 
 import com.github.pavelkuliaka.model.*
-import com.github.pavelkuliaka.repository.JsonGameRepository
-import com.github.pavelkuliaka.repository.JsonPlayerRepository
+import com.github.pavelkuliaka.repository.SqliteGameRepository
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import java.nio.file.Path
+import java.sql.DriverManager
 import java.util.UUID
 
 class SessionSerializationIntegrationTest {
-    private lateinit var gameRepo: JsonGameRepository
-    private lateinit var playerRepo: JsonPlayerRepository
-
-    @TempDir
-    lateinit var tempDir: Path
-
-    private lateinit var sessionsPath: String
-    private lateinit var playersPath: String
+    private lateinit var gameRepo: SqliteGameRepository
 
     @BeforeEach
     fun setUp() {
-        sessionsPath = File(tempDir.toFile(), "sessions.json").absolutePath
-        playersPath = File(tempDir.toFile(), "players.json").absolutePath
-        gameRepo = JsonGameRepository(sessionsPath)
-        playerRepo = JsonPlayerRepository(playersPath)
+        val conn = DriverManager.getConnection("jdbc:sqlite:")
+        conn.createStatement().execute("""
+            CREATE TABLE IF NOT EXISTS game_sessions (
+                id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'ACTIVE',
+                whose_turn TEXT, attack_turns_remaining INTEGER NOT NULL DEFAULT 0,
+                must_defuse INTEGER NOT NULL DEFAULT 0, winner_id TEXT,
+                turns TEXT NOT NULL DEFAULT '[]', draw_pile TEXT NOT NULL DEFAULT '[]',
+                discard_pile TEXT NOT NULL DEFAULT '{}',
+                player_hands TEXT NOT NULL DEFAULT '{}', initial_state TEXT
+            )
+        """)
+        conn.createStatement().execute("""
+            CREATE TABLE IF NOT EXISTS session_participants (
+                session_id TEXT NOT NULL, player_id TEXT NOT NULL,
+                PRIMARY KEY (session_id, player_id)
+            )
+        """)
+        gameRepo = SqliteGameRepository(conn)
     }
 
     @Test
@@ -47,12 +51,8 @@ class SessionSerializationIntegrationTest {
             )
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertNotNull(loaded)
         assertEquals(GameStatus.ACTIVE, loaded?.status)
         assertEquals(p1, loaded?.whoseTurn)
@@ -85,12 +85,8 @@ class SessionSerializationIntegrationTest {
             )
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertEquals(1, loaded?.discardPile?.get(CardType.ATTACK))
         assertEquals(2, loaded?.discardPile?.get(CardType.SKIP))
         assertEquals(1, loaded?.discardPile?.get(CardType.SEE_THE_FUTURE))
@@ -115,12 +111,8 @@ class SessionSerializationIntegrationTest {
             )
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertNotNull(loaded)
         assertTrue(loaded!!.drawPile.isEmpty())
         assertTrue(loaded.discardPile.isEmpty())
@@ -142,12 +134,8 @@ class SessionSerializationIntegrationTest {
             winnerId = p1
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertEquals(GameStatus.FINISHED, loaded?.status)
         assertEquals(p1, loaded?.winnerId)
     }
@@ -172,19 +160,15 @@ class SessionSerializationIntegrationTest {
             mustDefuse = true
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertEquals(2, loaded?.attackTurnsRemaining)
         assertTrue(loaded?.mustDefuse == true)
         assertEquals(p2, loaded?.whoseTurn)
     }
 
     @Test
-    fun `multiple sessions survive roundtrip`() {
+    fun `multiple sessions stored correctly`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
         val p3 = UUID.randomUUID()
@@ -203,14 +187,9 @@ class SessionSerializationIntegrationTest {
         )
         gameRepo.addSession(s1)
         gameRepo.addSession(s2)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        assertEquals(2, newRepo.sessions.size)
-        val loadedS1 = newRepo.getSession(s1.id)
-        val loadedS2 = newRepo.getSession(s2.id)
+        val loadedS1 = gameRepo.getSession(s1.id)
+        val loadedS2 = gameRepo.getSession(s2.id)
         assertEquals(GameStatus.FINISHED, loadedS1?.status)
         assertEquals(GameStatus.ACTIVE, loadedS2?.status)
     }
@@ -231,12 +210,8 @@ class SessionSerializationIntegrationTest {
             winnerId = p1
         )
         gameRepo.addSession(session)
-        assertTrue(gameRepo.saveSessions())
 
-        val newRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newRepo.loadSessions())
-
-        val loaded = newRepo.getSession(session.id)
+        val loaded = gameRepo.getSession(session.id)
         assertNull(loaded?.whoseTurn)
     }
 }

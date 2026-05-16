@@ -2,8 +2,11 @@ package com.github.pavelkuliaka.gui
 
 import com.github.pavelkuliaka.engine.GameAdminEngine
 import com.github.pavelkuliaka.model.GameSession
-import com.github.pavelkuliaka.repository.JsonGameRepository
-import com.github.pavelkuliaka.repository.JsonPlayerRepository
+import com.github.pavelkuliaka.repository.DatabaseManager
+import com.github.pavelkuliaka.repository.IGameRepository
+import com.github.pavelkuliaka.repository.IPlayerRepository
+import com.github.pavelkuliaka.repository.SqliteGameRepository
+import com.github.pavelkuliaka.repository.SqlitePlayerRepository
 import com.github.pavelkuliaka.service.StatisticsService
 import com.github.pavelkuliaka.validation.RuleValidator
 import javafx.application.Application
@@ -15,8 +18,8 @@ import javafx.stage.Stage
 import java.util.UUID
 
 object AppDependencies {
-    var gameRepository: JsonGameRepository = JsonGameRepository("games.json")
-    var playerRepository: JsonPlayerRepository = JsonPlayerRepository("players.json")
+    lateinit var gameRepository: IGameRepository
+    lateinit var playerRepository: IPlayerRepository
     val ruleValidator = RuleValidator()
     val statisticsService get() = StatisticsService(playerRepository)
     val engine get() = GameAdminEngine(gameRepository, playerRepository, ruleValidator, statisticsService)
@@ -49,8 +52,9 @@ fun main() {
 
 class ExplodingKittensApp : Application() {
     override fun start(stage: Stage) {
-        AppDependencies.gameRepository.loadSessions()
-        AppDependencies.playerRepository.loadPlayers()
+        DatabaseManager.init()
+        AppDependencies.gameRepository = SqliteGameRepository(DatabaseManager.connection)
+        AppDependencies.playerRepository = SqlitePlayerRepository(DatabaseManager.connection)
 
         val root = StackPane()
         Navigation.container = root
@@ -60,8 +64,7 @@ class ExplodingKittensApp : Application() {
         }
         stage.title = "Exploding Kittens - Game Administration"
         stage.setOnCloseRequest {
-            AppDependencies.gameRepository.saveSessions()
-            AppDependencies.playerRepository.savePlayers()
+            DatabaseManager.close()
             Platform.exit()
         }
         stage.show()

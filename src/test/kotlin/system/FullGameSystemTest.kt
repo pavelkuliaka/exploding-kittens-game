@@ -2,43 +2,32 @@ package system
 
 import TestFixtures
 import com.github.pavelkuliaka.engine.GameAdminEngine
+import com.github.pavelkuliaka.gui.TestGameRepository
+import com.github.pavelkuliaka.gui.TestPlayerRepository
 import com.github.pavelkuliaka.model.*
-import com.github.pavelkuliaka.repository.JsonGameRepository
-import com.github.pavelkuliaka.repository.JsonPlayerRepository
+import com.github.pavelkuliaka.repository.IGameRepository
+import com.github.pavelkuliaka.repository.IPlayerRepository
 import com.github.pavelkuliaka.service.StatisticsService
 import com.github.pavelkuliaka.validation.RuleValidator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 import java.util.UUID
 
 class FullGameSystemTest {
     private lateinit var engine: GameAdminEngine
-    private lateinit var gameRepo: JsonGameRepository
-    private lateinit var playerRepo: JsonPlayerRepository
+    private lateinit var gameRepo: IGameRepository
+    private lateinit var playerRepo: IPlayerRepository
     private lateinit var statsService: StatisticsService
-
-    @TempDir
-    lateinit var tempDir: File
-
-    private lateinit var sessionsFile: File
-    private lateinit var playersFile: File
 
     @BeforeEach
     fun setUp() {
-        sessionsFile = File(tempDir, "sessions.json")
-        playersFile = File(tempDir, "players.json")
-        gameRepo = JsonGameRepository(sessionsFile.absolutePath)
-        playerRepo = JsonPlayerRepository(playersFile.absolutePath)
+        gameRepo = TestGameRepository()
+        playerRepo = TestPlayerRepository()
         val validator = RuleValidator()
         statsService = StatisticsService(playerRepo)
         engine = GameAdminEngine(
-            gameRepo,
-            playerRepo,
-            validator,
-            statsService
+            gameRepo, playerRepo, validator, statsService
         )
     }
 

@@ -17,7 +17,7 @@ class SessionsListView : ViewBase() {
 
         children.add(Label("SESSIONS LIST").apply { styleClass.add("title") })
 
-        val sessions = AppDependencies.gameRepository.sessions.toList().sortedBy { (_, s) -> s.status.name }
+        val sessions = AppDependencies.gameRepository.getAllSessions().map { it.id to it }.sortedBy { (_, s) -> s.status.name }
         if (sessions.isEmpty()) {
             children.add(Label("No sessions found"))
         } else {

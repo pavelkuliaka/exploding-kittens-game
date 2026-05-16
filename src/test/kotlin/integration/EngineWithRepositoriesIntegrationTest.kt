@@ -3,39 +3,59 @@ package com.github.pavelkuliaka.integration
 import TestFixtures
 import com.github.pavelkuliaka.engine.GameAdminEngine
 import com.github.pavelkuliaka.model.*
-import com.github.pavelkuliaka.repository.JsonGameRepository
-import com.github.pavelkuliaka.repository.JsonPlayerRepository
+import com.github.pavelkuliaka.repository.IGameRepository
+import com.github.pavelkuliaka.repository.IPlayerRepository
+import com.github.pavelkuliaka.repository.SqliteGameRepository
+import com.github.pavelkuliaka.repository.SqlitePlayerRepository
 import com.github.pavelkuliaka.service.StatisticsService
 import com.github.pavelkuliaka.validation.RuleValidator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import java.nio.file.Path
+import java.sql.DriverManager
 import java.util.UUID
 
 class EngineWithRepositoriesIntegrationTest {
     private lateinit var engine: GameAdminEngine
-    private lateinit var gameRepo: JsonGameRepository
-    private lateinit var playerRepo: JsonPlayerRepository
+    private lateinit var gameRepo: IGameRepository
+    private lateinit var playerRepo: IPlayerRepository
     private lateinit var statsService: StatisticsService
-
-    @TempDir
-    lateinit var tempDir: Path
-
-    private lateinit var sessionsPath: String
-    private lateinit var playersPath: String
 
     @BeforeEach
     fun setUp() {
-        sessionsPath = File(tempDir.toFile(), "sessions.json").absolutePath
-        playersPath = File(tempDir.toFile(), "players.json").absolutePath
-        gameRepo = JsonGameRepository(sessionsPath)
-        playerRepo = JsonPlayerRepository(playersPath)
+        val conn = DriverManager.getConnection("jdbc:sqlite:")
+        conn.createStatement().execute("""
+            CREATE TABLE IF NOT EXISTS players (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL,
+                is_playing INTEGER NOT NULL DEFAULT 0,
+                total_games INTEGER NOT NULL DEFAULT 0,
+                wins INTEGER NOT NULL DEFAULT 0, losses INTEGER NOT NULL DEFAULT 0,
+                win_rate INTEGER NOT NULL DEFAULT 0, defused INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        conn.createStatement().execute("""
+            CREATE TABLE IF NOT EXISTS game_sessions (
+                id TEXT PRIMARY KEY, status TEXT NOT NULL DEFAULT 'ACTIVE',
+                whose_turn TEXT, attack_turns_remaining INTEGER NOT NULL DEFAULT 0,
+                must_defuse INTEGER NOT NULL DEFAULT 0, winner_id TEXT,
+                turns TEXT NOT NULL DEFAULT '[]', draw_pile TEXT NOT NULL DEFAULT '[]',
+                discard_pile TEXT NOT NULL DEFAULT '{}',
+                player_hands TEXT NOT NULL DEFAULT '{}', initial_state TEXT
+            )
+        """)
+        conn.createStatement().execute("""
+            CREATE TABLE IF NOT EXISTS session_participants (
+                session_id TEXT NOT NULL, player_id TEXT NOT NULL,
+                PRIMARY KEY (session_id, player_id)
+            )
+        """)
+        gameRepo = SqliteGameRepository(conn)
+        playerRepo = SqlitePlayerRepository(conn)
         val validator = RuleValidator()
         statsService = StatisticsService(playerRepo)
-        engine = GameAdminEngine(gameRepo, playerRepo, validator, statsService)
+        engine = GameAdminEngine(
+            gameRepo, playerRepo, validator, statsService
+        )
     }
 
     @Test
@@ -50,26 +70,22 @@ class EngineWithRepositoriesIntegrationTest {
         session.playerHands[p1] = mutableMapOf(CardType.DEFUSE to 1)
         session.playerHands[p2] = mutableMapOf(CardType.DEFUSE to 1)
         session.drawPile.clear()
+        gameRepo.addSession(session)
 
         engine.endSession(sessionId, p1)
 
-        assertTrue(playerRepo.savePlayers())
-
-        val newPlayerRepo = JsonPlayerRepository(playersPath)
-        assertTrue(newPlayerRepo.loadPlayers())
-
-        val loadedP1 = newPlayerRepo.getPlayer(p1)
+        val loadedP1 = playerRepo.getPlayer(p1)
         assertEquals(1, loadedP1?.stats?.wins)
         assertEquals(1, loadedP1?.stats?.totalGames)
         assertEquals(1, loadedP1?.stats?.winRate)
 
-        val loadedP2 = newPlayerRepo.getPlayer(p2)
+        val loadedP2 = playerRepo.getPlayer(p2)
         assertEquals(1, loadedP2?.stats?.losses)
         assertEquals(0, loadedP2?.stats?.wins)
     }
 
     @Test
-    fun `player isPlaying flag preserved after save and load`() {
+    fun `player isPlaying flag preserved`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
         playerRepo.addPlayer(TestFixtures.createPlayer(p1, "P1"))
@@ -77,17 +93,12 @@ class EngineWithRepositoriesIntegrationTest {
 
         engine.startNewSession(p1, p2)
 
-        assertTrue(playerRepo.savePlayers())
-
-        val newPlayerRepo = JsonPlayerRepository(playersPath)
-        assertTrue(newPlayerRepo.loadPlayers())
-
-        assertTrue(newPlayerRepo.getPlayer(p1)?.isPlaying == true)
-        assertTrue(newPlayerRepo.getPlayer(p2)?.isPlaying == true)
+        assertTrue(playerRepo.getPlayer(p1)?.isPlaying == true)
+        assertTrue(playerRepo.getPlayer(p2)?.isPlaying == true)
     }
 
     @Test
-    fun `simple session survives save and load`() {
+    fun `simple session roundtrip`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
         playerRepo.addPlayer(TestFixtures.createPlayer(p1, "P1"))
@@ -99,13 +110,9 @@ class EngineWithRepositoriesIntegrationTest {
         session.playerHands[p2] = mutableMapOf(CardType.DEFUSE to 1)
         session.drawPile.clear()
         session.drawPile.addAll(listOf(CardType.SPECIAL_1, CardType.SPECIAL_2))
+        gameRepo.addSession(session)
 
-        assertTrue(gameRepo.saveSessions())
-
-        val newGameRepo = JsonGameRepository(sessionsPath)
-        assertTrue(newGameRepo.loadSessions())
-
-        val loaded = newGameRepo.getSession(sessionId)
+        val loaded = gameRepo.getSession(sessionId)
         assertNotNull(loaded)
         assertEquals(setOf(p1, p2), loaded?.participants)
         assertEquals(GameStatus.ACTIVE, loaded?.status)
@@ -117,15 +124,20 @@ class EngineWithRepositoriesIntegrationTest {
     fun `multiple players stats accumulate correctly`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        playerRepo.addPlayer(Player(p1, "P1", false, PlayerStats(5, 3, 2, 60, 0)))
-        playerRepo.addPlayer(Player(p2, "P2", false, PlayerStats(3, 1, 2, 33, 0)))
+        playerRepo.addPlayer(Player(
+            p1,
+            "P1",
+            false,
+            PlayerStats(5, 3, 2, 60, 0)
+        ))
+        playerRepo.addPlayer(Player(
+            p2,
+            "P2",
+            false,
+            PlayerStats(3, 1, 2, 33, 0)
+        ))
 
-        assertTrue(playerRepo.savePlayers())
-
-        val newPlayerRepo = JsonPlayerRepository(playersPath)
-        assertTrue(newPlayerRepo.loadPlayers())
-
-        val statsService2 = StatisticsService(newPlayerRepo)
+        val statsService2 = StatisticsService(playerRepo)
         val leaderboard = statsService2.getLeaderboard(2u)
         assertEquals(2, leaderboard.size)
         assertEquals("P2", leaderboard[0].name)
@@ -142,12 +154,7 @@ class EngineWithRepositoriesIntegrationTest {
         val sessionId = engine.startNewSession(p1, p2)
         engine.endSession(sessionId, null)
 
-        assertTrue(playerRepo.savePlayers())
-
-        val newPlayerRepo = JsonPlayerRepository(playersPath)
-        assertTrue(newPlayerRepo.loadPlayers())
-
-        val loadedP1 = newPlayerRepo.getPlayer(p1)
+        val loadedP1 = playerRepo.getPlayer(p1)
         assertEquals(1, loadedP1?.stats?.totalGames)
         assertEquals(0, loadedP1?.stats?.wins)
         assertEquals(0, loadedP1?.stats?.losses)

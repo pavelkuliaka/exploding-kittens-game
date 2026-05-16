@@ -7,4 +7,5 @@ interface IGameRepository {
     fun addSession(gameSession: GameSession)
     fun getSession(sessionId: UUID): GameSession?
     fun removeSession(sessionId: UUID)
+    fun getAllSessions(): List<GameSession>
 }

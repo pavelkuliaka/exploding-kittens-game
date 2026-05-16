@@ -182,7 +182,6 @@ class CreateSessionView : ViewBase() {
             s.participants.forEach { pid ->
                 AppDependencies.playerRepository.getPlayer(pid)?.isPlaying = false
             }
-            AppDependencies.playerRepository.savePlayers()
             AppDependencies.gameRepository.removeSession(s.id)
         }
         navigateTo(MainMenuView())
@@ -232,7 +231,6 @@ class CreateSessionView : ViewBase() {
                                     return@setOnAction
                                 }
                                 AppDependencies.activeSessionId = s.id
-                                AppDependencies.gameRepository.saveSessions()
                                 navigateTo(GamePlayView())
                             }
                         },

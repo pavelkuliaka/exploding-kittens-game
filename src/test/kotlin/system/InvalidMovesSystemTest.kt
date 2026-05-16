@@ -2,44 +2,32 @@ package system
 
 import TestFixtures
 import com.github.pavelkuliaka.engine.GameAdminEngine
+import com.github.pavelkuliaka.gui.TestGameRepository
+import com.github.pavelkuliaka.gui.TestPlayerRepository
 import com.github.pavelkuliaka.model.*
-import com.github.pavelkuliaka.repository.JsonGameRepository
-import com.github.pavelkuliaka.repository.JsonPlayerRepository
+import com.github.pavelkuliaka.repository.IGameRepository
+import com.github.pavelkuliaka.repository.IPlayerRepository
 import com.github.pavelkuliaka.service.StatisticsService
 import com.github.pavelkuliaka.validation.RuleValidator
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
-import java.nio.file.Path
 import java.util.UUID
 
 class InvalidMovesSystemTest {
     private lateinit var engine: GameAdminEngine
-    private lateinit var gameRepo: JsonGameRepository
-    private lateinit var playerRepo: JsonPlayerRepository
+    private lateinit var gameRepo: IGameRepository
+    private lateinit var playerRepo: IPlayerRepository
     private lateinit var statsService: StatisticsService
-
-    @TempDir
-    lateinit var tempDir: Path
-
-    private lateinit var sessionsPath: String
-    private lateinit var playersPath: String
 
     @BeforeEach
     fun setUp() {
-        sessionsPath = File(tempDir.toFile(), "sessions.json").absolutePath
-        playersPath = File(tempDir.toFile(), "players.json").absolutePath
-        gameRepo = JsonGameRepository(sessionsPath)
-        playerRepo = JsonPlayerRepository(playersPath)
+        gameRepo = TestGameRepository()
+        playerRepo = TestPlayerRepository()
         val validator = RuleValidator()
         statsService = StatisticsService(playerRepo)
         engine = GameAdminEngine(
-            gameRepo,
-            playerRepo,
-            validator,
-            statsService
+            gameRepo, playerRepo, validator, statsService
         )
     }
 
@@ -124,9 +112,7 @@ class InvalidMovesSystemTest {
             drawPile = mutableListOf()
         )
         assertFalse(engine.addTurn(sessionId, Turn.PlayDouble(
-            p1,
-            CardType.SPECIAL_1,
-            CardType.SKIP
+            p1, CardType.SPECIAL_1, CardType.SKIP
         )))
     }
 

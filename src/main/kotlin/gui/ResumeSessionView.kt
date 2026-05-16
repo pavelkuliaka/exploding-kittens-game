@@ -17,9 +17,8 @@ class ResumeSessionView : ViewBase() {
 
         children.add(Label("RESUME ACTIVE SESSION").apply { styleClass.add("title") })
 
-        val activeSessions = AppDependencies.gameRepository.sessions.values
+        val activeSessions = AppDependencies.gameRepository.getAllSessions()
             .filter { it.status == GameStatus.ACTIVE }
-            .toList()
 
         if (activeSessions.isEmpty()) {
             children.add(Label("No active sessions found"))

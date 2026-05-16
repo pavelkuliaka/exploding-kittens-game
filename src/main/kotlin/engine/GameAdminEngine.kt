@@ -42,6 +42,8 @@ class GameAdminEngine (
 
         processTurn(session, turn)
 
+        gameRepository.addSession(session)
+
         return true
     }
 
@@ -338,8 +340,14 @@ class GameAdminEngine (
                 status = GameStatus.ACTIVE,
                 whoseTurn = player1Id
             )
-        playerRepository.getPlayer(player1Id)?.isPlaying = true
-        playerRepository.getPlayer(player2Id)?.isPlaying = true
+        playerRepository.getPlayer(player1Id)?.let {
+            it.isPlaying = true
+            playerRepository.addPlayer(it)
+        }
+        playerRepository.getPlayer(player2Id)?.let {
+            it.isPlaying = true
+            playerRepository.addPlayer(it)
+        }
 
         gameRepository.addSession(session)
 
@@ -359,6 +367,8 @@ class GameAdminEngine (
             if (playerId == winnerId) player.stats.wins++
             else if (winnerId != null) player.stats.losses++
             player.stats.winRate = player.stats.wins / player.stats.totalGames
+            playerRepository.addPlayer(player)
         }
+        gameRepository.addSession(session)
     }
 }

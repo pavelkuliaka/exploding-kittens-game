@@ -37,8 +37,6 @@ class MainMenuView : ViewBase() {
             Button("0. Exit").apply {
                 styleClass.add("nav-button")
                 setOnAction {
-                    AppDependencies.gameRepository.saveSessions()
-                    AppDependencies.playerRepository.savePlayers()
                     Platform.exit()
                 }
             }.also { VBox.setMargin(it, Insets(0.0, 0.0, 0.0, 20.0)) }
