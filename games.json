@@ -1,0 +1,100 @@
+{
+  "6dd97f48-666f-44e1-8823-98c8a308abdb": {
+    "id": "6dd97f48-666f-44e1-8823-98c8a308abdb",
+    "participants": [
+      "ee7291a1-30ec-4653-bed6-bc45b1a11de9",
+      "8f8ab429-2b6e-41e5-b7cc-37680a3751e2"
+    ],
+    "turns": [
+      {
+        "playerId": "ee7291a1-30ec-4653-bed6-bc45b1a11de9",
+        "card": "SPECIAL_2",
+        "stolenCard": "SHUFFLE"
+      }
+    ],
+    "discardPile": {
+      "SPECIAL_2": 2
+    },
+    "drawPile": [
+      "EXPLODING_KITTEN",
+      "DEFUSE",
+      "NOPE",
+      "NOPE",
+      "ATTACK",
+      "ATTACK",
+      "SKIP",
+      "SKIP",
+      "SEE_THE_FUTURE",
+      "SHUFFLE",
+      "FAVOR",
+      "SPECIAL_1",
+      "SPECIAL_3",
+      "SPECIAL_3",
+      "SPECIAL_3",
+      "SPECIAL_3"
+    ],
+    "status": "ACTIVE",
+    "whoseTurn": "ee7291a1-30ec-4653-bed6-bc45b1a11de9",
+    "playerHands": {
+      "ee7291a1-30ec-4653-bed6-bc45b1a11de9": {
+        "DEFUSE": 1,
+        "SEE_THE_FUTURE": 2,
+        "SPECIAL_1": 1,
+        "FAVOR": 1,
+        "SKIP": 1,
+        "SHUFFLE": 1
+      },
+      "8f8ab429-2b6e-41e5-b7cc-37680a3751e2": {
+        "DEFUSE": 1,
+        "SPECIAL_1": 2,
+        "SPECIAL_2": 2,
+        "NOPE": 1,
+        "FAVOR": 1
+      }
+    },
+    "initialState": {
+      "whoseTurn": "ee7291a1-30ec-4653-bed6-bc45b1a11de9",
+      "attackTurnsRemaining": 0,
+      "mustDefuse": false,
+      "playerHands": {
+        "ee7291a1-30ec-4653-bed6-bc45b1a11de9": {
+          "DEFUSE": 1,
+          "SEE_THE_FUTURE": 2,
+          "SPECIAL_1": 1,
+          "SPECIAL_2": 2,
+          "FAVOR": 1,
+          "SKIP": 1
+        },
+        "8f8ab429-2b6e-41e5-b7cc-37680a3751e2": {
+          "DEFUSE": 1,
+          "SPECIAL_1": 2,
+          "SPECIAL_2": 2,
+          "SHUFFLE": 1,
+          "NOPE": 1,
+          "FAVOR": 1
+        }
+      },
+      "discardPile": {},
+      "drawPile": [
+        "EXPLODING_KITTEN",
+        "DEFUSE",
+        "NOPE",
+        "NOPE",
+        "ATTACK",
+        "ATTACK",
+        "SKIP",
+        "SKIP",
+        "SEE_THE_FUTURE",
+        "SHUFFLE",
+        "FAVOR",
+        "SPECIAL_1",
+        "SPECIAL_3",
+        "SPECIAL_3",
+        "SPECIAL_3",
+        "SPECIAL_3"
+      ]
+    },
+    "attackTurnsRemaining": 0,
+    "mustDefuse": false
+  }
+}
