@@ -34,7 +34,12 @@ class FullGameSystemTest {
         playerRepo = JsonPlayerRepository(playersFile.absolutePath)
         val validator = RuleValidator()
         statsService = StatisticsService(playerRepo)
-        engine = GameAdminEngine(gameRepo, playerRepo, validator, statsService)
+        engine = GameAdminEngine(
+            gameRepo,
+            playerRepo,
+            validator,
+            statsService
+        )
     }
 
     @Test

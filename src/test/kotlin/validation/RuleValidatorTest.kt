@@ -61,47 +61,91 @@ class RuleValidatorTest {
     fun `validateTurn DrawCard returns true when valid`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf(CardType.ATTACK))
-        assertTrue(validator.validateTurn(session, Turn.DrawCard(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1,
+            p2,
+            whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf(CardType.ATTACK)
+        )
+        assertTrue(validator.validateTurn(
+            session,
+            Turn.DrawCard(
+                p1,
+                CardType.ATTACK
+            )
+        ))
     }
 
     @Test
     fun `validateTurn DrawCard returns false when mustDefuse`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf(CardType.ATTACK), mustDefuse = true)
-        assertFalse(validator.validateTurn(session, Turn.DrawCard(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1,
+            p2,
+            whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf(CardType.ATTACK),
+            mustDefuse = true
+        )
+        assertFalse(validator.validateTurn(
+            session,
+            Turn.DrawCard(p1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn DrawCard returns false when drawPile empty`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf())
-        assertFalse(validator.validateTurn(session, Turn.DrawCard(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1,
+            p2,
+            whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf()
+        )
+        assertFalse(validator.validateTurn(
+            session, Turn.DrawCard(p1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn DrawCard returns false when top card mismatch`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf(CardType.ATTACK))
-        assertFalse(validator.validateTurn(session, Turn.DrawCard(p1, CardType.NOPE)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf(CardType.ATTACK)
+        )
+        assertFalse(validator.validateTurn(
+            session, Turn.DrawCard(p1, CardType.NOPE)
+        ))
     }
 
     @Test
     fun `validateTurn DrawCard returns false when not player's turn`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p2, p1Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf(CardType.ATTACK))
-        assertFalse(validator.validateTurn(session, Turn.DrawCard(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p2,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf(CardType.ATTACK)
+        )
+        assertFalse(validator.validateTurn(
+            session, Turn.DrawCard(p1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn Defuse returns true when mustDefuse`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), mustDefuse = true)
+        val session = makeSession(
+            p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), mustDefuse = true
+        )
         assertTrue(validator.validateTurn(session, Turn.Defuse(p1, 0)))
     }
 
@@ -109,7 +153,11 @@ class RuleValidatorTest {
     fun `validateTurn Defuse returns false when not mustDefuse`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), mustDefuse = false)
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            mustDefuse = false
+        )
         assertFalse(validator.validateTurn(session, Turn.Defuse(p1, 0)))
     }
 
@@ -117,7 +165,9 @@ class RuleValidatorTest {
     fun `validateTurn Defuse returns false when no DEFUSE card`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.ATTACK to 1), mustDefuse = true)
+        val session = makeSession(
+            p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.ATTACK to 1), mustDefuse = true
+        )
         assertFalse(validator.validateTurn(session, Turn.Defuse(p1, 0)))
     }
 
@@ -125,7 +175,10 @@ class RuleValidatorTest {
     fun `validateTurn Attack returns true when has card and is turn`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.ATTACK to 1))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.ATTACK to 1)
+        )
         assertTrue(validator.validateTurn(session, Turn.Attack(p1)))
     }
 
@@ -141,7 +194,10 @@ class RuleValidatorTest {
     fun `validateTurn Skip returns true when has card and is turn`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SKIP to 1))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SKIP to 1)
+        )
         assertTrue(validator.validateTurn(session, Turn.Skip(p1)))
     }
 
@@ -157,7 +213,10 @@ class RuleValidatorTest {
     fun `validateTurn SeeTheFuture returns true when has card and is turn`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SEE_THE_FUTURE to 1))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SEE_THE_FUTURE to 1)
+        )
         assertTrue(validator.validateTurn(session, Turn.SeeTheFuture(p1)))
     }
 
@@ -173,87 +232,156 @@ class RuleValidatorTest {
     fun `validateTurn Shuffle returns true when valid`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1), drawPile = mutableListOf(CardType.ATTACK, CardType.SKIP))
-        assertTrue(validator.validateTurn(session, Turn.Shuffle(p1, listOf(CardType.SKIP, CardType.ATTACK))))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1),
+            drawPile = mutableListOf(CardType.ATTACK, CardType.SKIP)
+        )
+        assertTrue(validator.validateTurn(
+            session,
+            Turn.Shuffle(p1, listOf(CardType.SKIP, CardType.ATTACK))
+        ))
     }
 
     @Test
     fun `validateTurn Shuffle returns false when size mismatch`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1), drawPile = mutableListOf(CardType.ATTACK, CardType.SKIP))
-        assertFalse(validator.validateTurn(session, Turn.Shuffle(p1, listOf(CardType.ATTACK))))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1),
+            drawPile = mutableListOf(CardType.ATTACK, CardType.SKIP)
+        )
+        assertFalse(validator.validateTurn(
+            session, Turn.Shuffle(p1, listOf(CardType.ATTACK))
+        ))
     }
 
     @Test
     fun `validateTurn Shuffle returns false when composition mismatch`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1), drawPile = mutableListOf(CardType.ATTACK, CardType.ATTACK))
-        assertFalse(validator.validateTurn(session, Turn.Shuffle(p1, listOf(CardType.ATTACK, CardType.SKIP))))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SHUFFLE to 1),
+            drawPile = mutableListOf(CardType.ATTACK, CardType.ATTACK)
+        )
+        assertFalse(validator.validateTurn(
+            session,
+            Turn.Shuffle(p1, listOf(CardType.ATTACK, CardType.SKIP))
+        ))
     }
 
     @Test
     fun `validateTurn Favor returns true when opponent has card`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.FAVOR to 1), p2Hand = mapOf(CardType.ATTACK to 1))
-        assertTrue(validator.validateTurn(session, Turn.Favor(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.FAVOR to 1),
+            p2Hand = mapOf(CardType.ATTACK to 1)
+        )
+        assertTrue(validator.validateTurn(
+            session, Turn.Favor(p1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn Favor returns false when opponent does not have card`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.FAVOR to 1), p2Hand = mapOf())
-        assertFalse(validator.validateTurn(session, Turn.Favor(p1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.FAVOR to 1),
+            p2Hand = mapOf()
+        )
+        assertFalse(validator.validateTurn(
+            session, Turn.Favor(p1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn PlayDouble returns true when valid`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 2), p2Hand = mapOf(CardType.ATTACK to 1))
-        assertTrue(validator.validateTurn(session, Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 2),
+            p2Hand = mapOf(CardType.ATTACK to 1)
+        )
+        assertTrue(validator.validateTurn(
+            session,
+            Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn PlayDouble returns false when less than 2 cards`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 1), p2Hand = mapOf(CardType.ATTACK to 1))
-        assertFalse(validator.validateTurn(session, Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 1),
+            p2Hand = mapOf(CardType.ATTACK to 1)
+        )
+        assertFalse(validator.validateTurn(
+            session,
+            Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn PlayDouble returns false when opponent has no stolenCard`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 2), p2Hand = mapOf())
-        assertFalse(validator.validateTurn(session, Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_1 to 2),
+            p2Hand = mapOf()
+        )
+        assertFalse(validator.validateTurn(
+            session,
+            Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.ATTACK)
+        ))
     }
 
     @Test
     fun `validateTurn PlayTriple returns true when has 3 cards`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_2 to 3))
-        assertTrue(validator.validateTurn(session, Turn.PlayTriple(p1, CardType.SPECIAL_2)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_2 to 3)
+        )
+        assertTrue(validator.validateTurn(
+            session,
+            Turn.PlayTriple(p1, CardType.SPECIAL_2)
+        ))
     }
 
     @Test
     fun `validateTurn PlayTriple returns false when less than 3 cards`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_2 to 2))
-        assertFalse(validator.validateTurn(session, Turn.PlayTriple(p1, CardType.SPECIAL_2)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.SPECIAL_2 to 2)
+        )
+        assertFalse(validator.validateTurn(
+            session,
+            Turn.PlayTriple(p1, CardType.SPECIAL_2)
+        ))
     }
 
     @Test
     fun `validateTurn Nope returns false when target is Defuse`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1), turns = mutableListOf(Turn.Defuse(p1, 0)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1),
+            turns = mutableListOf(Turn.Defuse(p1, 0))
+        )
         assertFalse(validator.validateTurn(session, Turn.Nope(p1, 0)))
     }
 
@@ -261,7 +389,10 @@ class RuleValidatorTest {
     fun `validateTurn Nope returns false when target is DrawCard`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1), turns = mutableListOf(Turn.DrawCard(
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1),
+            turns = mutableListOf(Turn.DrawCard(
             p2,
             CardType.ATTACK
         )))
@@ -272,7 +403,11 @@ class RuleValidatorTest {
     fun `validateTurn Nope returns false when no NOPE card`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), turns = mutableListOf(Turn.Attack(p1)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            turns = mutableListOf(Turn.Attack(p1))
+        )
         assertFalse(validator.validateTurn(session, Turn.Nope(p1, 0)))
     }
 
@@ -280,7 +415,11 @@ class RuleValidatorTest {
     fun `validateTurn Nope returns true when target is Attack`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1), turns = mutableListOf(Turn.Attack(p1)))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1, CardType.NOPE to 1),
+            turns = mutableListOf(Turn.Attack(p1))
+        )
         assertTrue(validator.validateTurn(session, Turn.Nope(p1, 0)))
     }
 
@@ -296,8 +435,14 @@ class RuleValidatorTest {
     fun `validateCardDistribution returns valid for correct distribution`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val p1Hand = mapOf(CardType.DEFUSE to 1, CardType.ATTACK to 1, CardType.SPECIAL_1 to 3, CardType.SKIP to 1, CardType.FAVOR to 1, CardType.SHUFFLE to 1)
-        val p2Hand = mapOf(CardType.DEFUSE to 1, CardType.SKIP to 1, CardType.SPECIAL_2 to 3, CardType.NOPE to 1, CardType.ATTACK to 1, CardType.FAVOR to 1)
+        val p1Hand = mapOf(
+            CardType.DEFUSE to 1, CardType.ATTACK to 1, CardType.SPECIAL_1 to 3,
+            CardType.SKIP to 1, CardType.FAVOR to 1, CardType.SHUFFLE to 1
+        )
+        val p2Hand = mapOf(
+            CardType.DEFUSE to 1, CardType.SKIP to 1, CardType.SPECIAL_2 to 3,
+            CardType.NOPE to 1, CardType.ATTACK to 1, CardType.FAVOR to 1
+        )
 
         val deck = DeckComposition.CARDS.toMutableMap()
         val remainingCards = mutableMapOf<CardType, Int>()
@@ -328,7 +473,11 @@ class RuleValidatorTest {
     fun `validateCardDistribution returns false when hand size not 8`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), p2Hand = mapOf(CardType.DEFUSE to 1))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            p2Hand = mapOf(CardType.DEFUSE to 1)
+        )
         val result = validator.validateCardDistribution(session, DeckComposition.CARDS, emptyMap())
         assertFalse(result.isValid)
         assertTrue(result.errors.any { it.contains("8") })
@@ -338,7 +487,11 @@ class RuleValidatorTest {
     fun `validateCardDistribution returns false when no DEFUSE`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.ATTACK to 8), p2Hand = mapOf(CardType.ATTACK to 8))
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.ATTACK to 8),
+            p2Hand = mapOf(CardType.ATTACK to 8)
+        )
         val result = validator.validateCardDistribution(session, DeckComposition.CARDS, emptyMap())
         assertFalse(result.isValid)
         assertTrue(result.errors.any { it.contains("DEFUSE") })
@@ -348,7 +501,12 @@ class RuleValidatorTest {
     fun `validateDrawPile returns false when total cards mismatch`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), p2Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf())
+        val session = makeSession(
+            p1, p2, whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            p2Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf()
+        )
         val result = validator.validateDrawPile(session, DeckComposition.CARDS, emptyMap())
         assertFalse(result.isValid)
         assertTrue(result.errors.any { it.contains("Total cards") })
@@ -358,8 +516,18 @@ class RuleValidatorTest {
     fun `validateDrawPile returns false when pool not empty`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val session = makeSession(p1, p2, whoseTurn = p1, p1Hand = mapOf(CardType.DEFUSE to 1), p2Hand = mapOf(CardType.DEFUSE to 1), drawPile = mutableListOf())
-        val result = validator.validateDrawPile(session, DeckComposition.CARDS, mapOf(CardType.ATTACK to 1))
+        val session = makeSession(
+            p1,
+            p2,
+            whoseTurn = p1,
+            p1Hand = mapOf(CardType.DEFUSE to 1),
+            p2Hand = mapOf(CardType.DEFUSE to 1),
+            drawPile = mutableListOf())
+        val result = validator.validateDrawPile(
+            session,
+            DeckComposition.CARDS,
+            mapOf(CardType.ATTACK to 1)
+        )
         assertFalse(result.isValid)
         assertTrue(result.errors.any { it.contains("Pool is not empty") })
     }

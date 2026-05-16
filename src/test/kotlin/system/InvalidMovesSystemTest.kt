@@ -35,7 +35,12 @@ class InvalidMovesSystemTest {
         playerRepo = JsonPlayerRepository(playersPath)
         val validator = RuleValidator()
         statsService = StatisticsService(playerRepo)
-        engine = GameAdminEngine(gameRepo, playerRepo, validator, statsService)
+        engine = GameAdminEngine(
+            gameRepo,
+            playerRepo,
+            validator,
+            statsService
+        )
     }
 
     @Test
@@ -118,7 +123,11 @@ class InvalidMovesSystemTest {
             p2Hand = mutableMapOf(CardType.DEFUSE to 1),
             drawPile = mutableListOf()
         )
-        assertFalse(engine.addTurn(sessionId, Turn.PlayDouble(p1, CardType.SPECIAL_1, CardType.SKIP)))
+        assertFalse(engine.addTurn(sessionId, Turn.PlayDouble(
+            p1,
+            CardType.SPECIAL_1,
+            CardType.SKIP
+        )))
     }
 
     @Test
@@ -227,7 +236,9 @@ class InvalidMovesSystemTest {
         val stateBefore = gameRepo.getSession(sessionId)!!.copy(
             turns = gameRepo.getSession(sessionId)!!.turns.toMutableList(),
             discardPile = gameRepo.getSession(sessionId)!!.discardPile.toMutableMap(),
-            playerHands = gameRepo.getSession(sessionId)!!.playerHands.mapValues { it.value.toMutableMap() }.toMutableMap(),
+            playerHands = gameRepo.getSession(sessionId)!!.playerHands.mapValues {
+                it.value.toMutableMap()
+            }.toMutableMap(),
             drawPile = gameRepo.getSession(sessionId)!!.drawPile.toMutableList()
         )
 

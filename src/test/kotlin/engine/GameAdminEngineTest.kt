@@ -1,6 +1,5 @@
 package com.github.pavelkuliaka.engine
 
-import com.github.pavelkuliaka.engine.GameAdminEngine
 import com.github.pavelkuliaka.model.CardType
 import com.github.pavelkuliaka.model.GameSession
 import com.github.pavelkuliaka.model.GameStatus
@@ -27,7 +26,12 @@ class GameAdminEngineTest {
         playerRepo = TestPlayerRepo()
         val validator = TestRuleValidator()
         val statsService = TestStatsService()
-        engine = GameAdminEngine(gameRepo, playerRepo, validator, statsService)
+        engine = GameAdminEngine(
+            gameRepo,
+            playerRepo,
+            validator,
+            statsService
+        )
     }
 
     @Test
@@ -265,8 +269,18 @@ class GameAdminEngineTest {
     fun `startNewSession creates session with correct state`() {
         val p1 = UUID.randomUUID()
         val p2 = UUID.randomUUID()
-        val player1 = Player(p1, "P1", false, PlayerStats(0, 0, 0, 0, 0))
-        val player2 = Player(p2, "P2", false, PlayerStats(0, 0, 0, 0, 0))
+        val player1 = Player(
+            p1,
+            "P1",
+            false,
+            PlayerStats(0, 0, 0, 0, 0)
+        )
+        val player2 = Player(
+            p2,
+            "P2",
+            false,
+            PlayerStats(0, 0, 0, 0, 0)
+        )
         playerRepo.addPlayer(player1)
         playerRepo.addPlayer(player2)
 
@@ -378,8 +392,16 @@ private class TestPlayerRepo : IPlayerRepository {
 }
 
 private class TestRuleValidator : IRuleValidator {
-    override fun validateCardDistribution(session: GameSession, deckComposition: Map<CardType, Int>, availableCards: Map<CardType, Int>) = TODO()
-    override fun validateDrawPile(session: GameSession, deckComposition: Map<CardType, Int>, availableCards: Map<CardType, Int>) = TODO()
+    override fun validateCardDistribution(
+        session: GameSession,
+        deckComposition: Map<CardType, Int>,
+        availableCards: Map<CardType, Int>
+    ) = TODO()
+    override fun validateDrawPile(
+        session: GameSession,
+        deckComposition: Map<CardType, Int>,
+        availableCards: Map<CardType, Int>
+    ) = TODO()
     override fun validateTurn(gameSession: GameSession, nextTurn: Turn): Boolean {
         if (gameSession.status != GameStatus.ACTIVE) return false
         if (nextTurn.playerId !in gameSession.participants) return false
@@ -422,7 +444,10 @@ private class TestRuleValidator : IRuleValidator {
                 if (nextTurn.playerId != gameSession.whoseTurn) return false
                 if ((hand[CardType.SHUFFLE] ?: 0) < 1) return false
                 if (nextTurn.newDrawPile.size != gameSession.drawPile.size) return false
-                if (nextTurn.newDrawPile.groupBy { it }.mapValues { it.value.size } != gameSession.drawPile.groupBy { it }.mapValues { it.value.size }) return false
+                if (
+                    nextTurn.newDrawPile.groupBy { it }.mapValues { it.value.size } !=
+                    gameSession.drawPile.groupBy { it }.mapValues { it.value.size }
+                    ) return false
                 true
             }
             is Turn.Favor -> {
