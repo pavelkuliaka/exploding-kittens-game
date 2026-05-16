@@ -1,9 +1,5 @@
 package com.github.pavelkuliaka.gui
 
-import com.github.pavelkuliaka.console.ActionOption
-import com.github.pavelkuliaka.console.buildActions
-import com.github.pavelkuliaka.console.playerIdFromLabel
-import com.github.pavelkuliaka.console.turnDescription
 import com.github.pavelkuliaka.model.*
 import javafx.geometry.Insets
 import javafx.scene.Scene
@@ -34,7 +30,6 @@ class GamePlayView : ViewBase() {
                     children.addAll(
                         Button("Back to main menu").apply {
                             setOnAction {
-                                AppDependencies.gameRepository.saveSessions()
                                 navigateTo(MainMenuView())
                             }
                         },
@@ -153,9 +148,9 @@ class GamePlayView : ViewBase() {
         discardPanel.children.clear()
         if (session.discardPile.isEmpty()) discardPanel.children.add(Label("(empty)"))
         else session.discardPile.forEach {
-            (type, count) -> discardPanel.children.add(Label("$type ($count)").apply {
-                styleClass.add("discard-label")
-            })
+                (type, count) -> discardPanel.children.add(Label("$type ($count)").apply {
+            styleClass.add("discard-label")
+        })
         }
 
         turnsPanel.children.clear()
@@ -424,7 +419,6 @@ class GamePlayView : ViewBase() {
             return
         }
         messageLabel.text = ""
-        AppDependencies.gameRepository.saveSessions()
 
         if (session.status != GameStatus.ACTIVE) {
             val winner = session.winnerId?.let {
