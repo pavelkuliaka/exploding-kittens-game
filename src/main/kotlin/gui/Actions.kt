@@ -12,60 +12,86 @@ data class ActionOption(
     val label: String
 )
 
+private val catCards = listOf(CardType.SPECIAL_1, CardType.SPECIAL_2, CardType.SPECIAL_3)
+
+private val actionCardMap = mapOf(
+    CardType.ATTACK to ActionType.ATTACK,
+    CardType.SKIP to ActionType.SKIP,
+    CardType.SEE_THE_FUTURE to ActionType.SEE_THE_FUTURE,
+    CardType.SHUFFLE to ActionType.SHUFFLE,
+    CardType.FAVOR to ActionType.FAVOR,
+)
+
+private val actionLabels = mapOf(
+    ActionType.ATTACK to "Play Attack",
+    ActionType.SKIP to "Play Skip",
+    ActionType.SEE_THE_FUTURE to "Play See the Future",
+    ActionType.SHUFFLE to "Play Shuffle",
+    ActionType.FAVOR to "Play Favor",
+)
+
 fun buildActions(
     session: GameSession,
     currentPlayerId: UUID,
     opponentId: UUID,
     playerRepository: IPlayerRepository
 ): List<ActionOption> {
-    val actions = mutableListOf<ActionOption>()
+    if (session.mustDefuse) {
+        return listOf(defuseAction(currentPlayerId))
+    }
+
     val currentHand = session.playerHands[currentPlayerId] ?: mutableMapOf()
     val opponentHand = session.playerHands[opponentId] ?: mutableMapOf()
 
-    if (session.mustDefuse) {
-        actions += ActionOption(ActionType.DEFUSE, "Play Defuse (${currentPlayerId.short()})")
-        return actions
-    }
+    return buildDrawAction(session) +
+            buildActionCardActions(currentHand, opponentHand) +
+            buildCatCardActions(currentHand, opponentHand) +
+            buildNopeActions(session, playerRepository)
+}
 
-    val topCard = session.drawPile.firstOrNull()
-    if (topCard != null) {
-        actions += ActionOption(ActionType.DRAW_CARD, "Draw card: $topCard")
-    }
+private fun defuseAction(playerId: UUID) =
+    ActionOption(ActionType.DEFUSE, "Play Defuse (${playerId.short()})")
 
-    if ((currentHand[CardType.ATTACK] ?: 0) > 0) {
-        actions += ActionOption(ActionType.ATTACK, "Play Attack")
-    }
+private fun buildDrawAction(session: GameSession): List<ActionOption> {
+    val topCard = session.drawPile.firstOrNull() ?: return emptyList()
+    return listOf(ActionOption(ActionType.DRAW_CARD, "Draw card: $topCard"))
+}
 
-    if ((currentHand[CardType.SKIP] ?: 0) > 0) {
-        actions += ActionOption(ActionType.SKIP, "Play Skip")
+private fun buildActionCardActions(
+    currentHand: Map<CardType, Int>,
+    opponentHand: Map<CardType, Int>
+): List<ActionOption> {
+    val actions = mutableListOf<ActionOption>()
+    for ((card, action) in actionCardMap) {
+        if ((currentHand[card] ?: 0) == 0) continue
+        if (card == CardType.FAVOR && opponentHand.values.sum() == 0) continue
+        actions += ActionOption(action, actionLabels[action]!!)
     }
+    return actions
+}
 
-    if ((currentHand[CardType.SEE_THE_FUTURE] ?: 0) > 0) {
-        actions += ActionOption(ActionType.SEE_THE_FUTURE, "Play See the Future")
-    }
-
-    if ((currentHand[CardType.SHUFFLE] ?: 0) > 0) {
-        actions += ActionOption(ActionType.SHUFFLE, "Play Shuffle")
-    }
-
-    if ((currentHand[CardType.FAVOR] ?: 0) > 0 && opponentHand.values.sum() > 0) {
-        actions += ActionOption(ActionType.FAVOR, "Play Favor")
-    }
-
-    val catCards = listOf(CardType.SPECIAL_1, CardType.SPECIAL_2, CardType.SPECIAL_3)
-        .filter { (currentHand[it] ?: 0) >= 2 }
-    for (catCard in catCards) {
-        if (opponentHand.values.sum() > 0) {
-            actions += ActionOption(ActionType.PLAY_DOUBLE, "Play Double $catCard")
+private fun buildCatCardActions(
+    currentHand: Map<CardType, Int>,
+    opponentHand: Map<CardType, Int>
+): List<ActionOption> {
+    val actions = mutableListOf<ActionOption>()
+    for (cat in catCards) {
+        val count = currentHand[cat] ?: 0
+        if (count >= 2 && opponentHand.values.sum() > 0) {
+            actions += ActionOption(ActionType.PLAY_DOUBLE, "Play Double $cat")
+        }
+        if (count >= 3) {
+            actions += ActionOption(ActionType.PLAY_TRIPLE, "Play Triple $cat")
         }
     }
+    return actions
+}
 
-    val tripleCards = listOf(CardType.SPECIAL_1, CardType.SPECIAL_2, CardType.SPECIAL_3)
-        .filter { (currentHand[it] ?: 0) >= 3 }
-    for (tripleCard in tripleCards) {
-        actions += ActionOption(ActionType.PLAY_TRIPLE, "Play Triple $tripleCard")
-    }
-
+private fun buildNopeActions(
+    session: GameSession,
+    playerRepository: IPlayerRepository
+): List<ActionOption> {
+    val actions = mutableListOf<ActionOption>()
     for (playerId in session.participants) {
         val hand = session.playerHands[playerId] ?: mutableMapOf()
         if ((hand[CardType.NOPE] ?: 0) > 0) {
@@ -73,7 +99,6 @@ fun buildActions(
             actions += ActionOption(ActionType.NOPE, "Play Nope (${player?.name})")
         }
     }
-
     return actions
 }
 

@@ -84,8 +84,7 @@ class GameAdminEngine (
     }
 
     private fun processDefuse(session: GameSession, turn: Turn.Defuse) {
-        removeFromHand(session, turn.playerId, CardType.DEFUSE)
-        addToDiscard(session, CardType.DEFUSE)
+        spendCards(session, turn)
 
         val position = turn.insertPosition.coerceAtMost(session.drawPile.size)
         session.drawPile.add(position, CardType.EXPLODING_KITTEN)
@@ -95,13 +94,11 @@ class GameAdminEngine (
     }
 
     private fun processNope(session: GameSession, turn: Turn.Nope) {
-        removeFromHand(session, turn.playerId, CardType.NOPE)
-        addToDiscard(session, CardType.NOPE)
+        spendCards(session, turn)
     }
 
     private fun processAttack(session: GameSession, turn: Turn.Attack) {
-        removeFromHand(session, turn.playerId, CardType.ATTACK)
-        addToDiscard(session, CardType.ATTACK)
+        spendCards(session, turn)
 
         val opponent = getOpponent(session, turn.playerId) ?: return
 
@@ -110,8 +107,7 @@ class GameAdminEngine (
     }
 
     private fun processSkip(session: GameSession, turn: Turn.Skip) {
-        removeFromHand(session, turn.playerId, CardType.SKIP)
-        addToDiscard(session, CardType.SKIP)
+        spendCards(session, turn)
 
         if (session.attackTurnsRemaining > 0) {
             session.attackTurnsRemaining--
@@ -123,21 +119,18 @@ class GameAdminEngine (
     }
 
     private fun processSeeTheFuture(session: GameSession, turn: Turn.SeeTheFuture) {
-        removeFromHand(session, turn.playerId, CardType.SEE_THE_FUTURE)
-        addToDiscard(session, CardType.SEE_THE_FUTURE)
+        spendCards(session, turn)
     }
 
     private fun processShuffle(session: GameSession, turn: Turn.Shuffle) {
-        removeFromHand(session, turn.playerId, CardType.SHUFFLE)
-        addToDiscard(session, CardType.SHUFFLE)
+        spendCards(session, turn)
 
         session.drawPile.clear()
         session.drawPile.addAll(turn.newDrawPile)
     }
 
     private fun processFavor(session: GameSession, turn: Turn.Favor) {
-        removeFromHand(session, turn.playerId, CardType.FAVOR)
-        addToDiscard(session, CardType.FAVOR)
+        spendCards(session, turn)
 
         val opponent = getOpponent(session, turn.playerId) ?: return
 
@@ -146,8 +139,7 @@ class GameAdminEngine (
     }
 
     private fun processPlayDouble(session: GameSession, turn: Turn.PlayDouble) {
-        removeFromHand(session, turn.playerId, turn.card, 2)
-        addToDiscard(session, turn.card, 2)
+        spendCards(session, turn)
 
         val opponent = getOpponent(session, turn.playerId) ?: return
 
@@ -156,8 +148,7 @@ class GameAdminEngine (
     }
 
     private fun processPlayTriple(session: GameSession, turn: Turn.PlayTriple) {
-        removeFromHand(session, turn.playerId, turn.card, 3)
-        addToDiscard(session, turn.card, 3)
+        spendCards(session, turn)
     }
 
     private fun handleNopeChain(session: GameSession) {
@@ -182,47 +173,23 @@ class GameAdminEngine (
         }
     }
 
+    private fun cardForTurn(turn: Turn): Pair<CardType, Int>? = when (turn) {
+        is Turn.Defuse -> CardType.DEFUSE to 1
+        is Turn.Nope -> CardType.NOPE to 1
+        is Turn.Attack -> CardType.ATTACK to 1
+        is Turn.Skip -> CardType.SKIP to 1
+        is Turn.SeeTheFuture -> CardType.SEE_THE_FUTURE to 1
+        is Turn.Shuffle -> CardType.SHUFFLE to 1
+        is Turn.Favor -> CardType.FAVOR to 1
+        is Turn.PlayDouble -> turn.card to 2
+        is Turn.PlayTriple -> turn.card to 3
+        else -> null
+    }
+
     private fun spendCards(session: GameSession, turn: Turn) {
-        when (turn) {
-            is Turn.Defuse -> {
-                removeFromHand(session, turn.playerId, CardType.DEFUSE)
-                addToDiscard(session, CardType.DEFUSE)
-            }
-            is Turn.Nope -> {
-                removeFromHand(session, turn.playerId, CardType.NOPE)
-                addToDiscard(session, CardType.NOPE)
-            }
-            is Turn.Attack -> {
-                removeFromHand(session, turn.playerId, CardType.ATTACK)
-                addToDiscard(session, CardType.ATTACK)
-            }
-            is Turn.Skip -> {
-                removeFromHand(session, turn.playerId, CardType.SKIP)
-                addToDiscard(session, CardType.SKIP)
-            }
-            is Turn.SeeTheFuture -> {
-                removeFromHand(session, turn.playerId, CardType.SEE_THE_FUTURE)
-                addToDiscard(session, CardType.SEE_THE_FUTURE)
-            }
-            is Turn.Shuffle -> {
-                removeFromHand(session, turn.playerId, CardType.SHUFFLE)
-                addToDiscard(session, CardType.SHUFFLE)
-            }
-            is Turn.Favor -> {
-                removeFromHand(session, turn.playerId, CardType.FAVOR)
-                addToDiscard(session, CardType.FAVOR)
-            }
-            is Turn.PlayDouble -> {
-                removeFromHand(session, turn.playerId, turn.card, 2)
-                addToDiscard(session, turn.card, 2)
-            }
-            is Turn.PlayTriple -> {
-                removeFromHand(session, turn.playerId, turn.card, 3)
-                addToDiscard(session, turn.card, 3)
-            }
-            is Turn.DrawCard -> {}
-            is Turn.Pass -> {}
-        }
+        val (card, count) = cardForTurn(turn) ?: return
+        removeFromHand(session, turn.playerId, card, count)
+        addToDiscard(session, card, count)
     }
 
     private fun isTurnInvalid(turnIndex: Int, turns: List<Turn>): Boolean {
@@ -243,62 +210,72 @@ class GameAdminEngine (
         return nopeCount % 2 == 1
     }
 
+    private fun advanceAfterTurn(session: GameSession, playerId: UUID) {
+        if (session.attackTurnsRemaining > 0) {
+            session.attackTurnsRemaining--
+        }
+        if (session.attackTurnsRemaining == 0) {
+            switchToOpponent(session, playerId)
+        }
+    }
+
     private fun applyTurnEffect(session: GameSession, turn: Turn) {
         when (turn) {
-            is Turn.DrawCard -> {
-                session.drawPile.removeAt(0)
-                addToHand(session, turn.playerId, turn.card)
-
-                if (turn.card == CardType.EXPLODING_KITTEN) {
-                    session.mustDefuse = true
-                } else {
-                    if (session.attackTurnsRemaining > 0) {
-                        session.attackTurnsRemaining--
-                    }
-                    if (session.attackTurnsRemaining == 0) {
-                        switchToOpponent(session, turn.playerId)
-                    }
-                }
-            }
-            is Turn.Defuse -> {
-                val position = turn.insertPosition.coerceAtMost(session.drawPile.size)
-                session.drawPile.add(position, CardType.EXPLODING_KITTEN)
-
-                session.mustDefuse = false
-                switchToOpponent(session, turn.playerId)
-            }
-            is Turn.Nope -> {}
-            is Turn.Attack -> {
-                val opponent = getOpponent(session, turn.playerId) ?: return
-                session.attackTurnsRemaining += 2
-                session.whoseTurn = opponent
-            }
-            is Turn.Skip -> {
-                if (session.attackTurnsRemaining > 0) {
-                    session.attackTurnsRemaining--
-                }
-                if (session.attackTurnsRemaining == 0) {
-                    switchToOpponent(session, turn.playerId)
-                }
-            }
-            is Turn.SeeTheFuture -> {}
-            is Turn.Shuffle -> {
-                session.drawPile.clear()
-                session.drawPile.addAll(turn.newDrawPile)
-            }
-            is Turn.Favor -> {
-                val opponent = getOpponent(session, turn.playerId) ?: return
-                removeFromHand(session, opponent, turn.takenCard)
-                addToHand(session, turn.playerId, turn.takenCard)
-            }
-            is Turn.Pass -> {}
-            is Turn.PlayDouble -> {
-                val opponent = getOpponent(session, turn.playerId) ?: return
-                removeFromHand(session, opponent, turn.stolenCard)
-                addToHand(session, turn.playerId, turn.stolenCard)
-            }
-            is Turn.PlayTriple -> {}
+            is Turn.DrawCard -> applyDrawCardEffect(session, turn)
+            is Turn.Defuse -> applyDefuseEffect(session, turn)
+            is Turn.Attack -> applyAttackEffect(session, turn)
+            is Turn.Skip -> applySkipEffect(session, turn)
+            is Turn.Shuffle -> applyShuffleEffect(session, turn)
+            is Turn.Favor -> applyFavorEffect(session, turn)
+            is Turn.PlayDouble -> applyPlayDoubleEffect(session, turn)
+            else -> {}
         }
+    }
+
+    private fun applyDrawCardEffect(session: GameSession, turn: Turn.DrawCard) {
+        session.drawPile.removeAt(0)
+        addToHand(session, turn.playerId, turn.card)
+
+        if (turn.card == CardType.EXPLODING_KITTEN) {
+            session.mustDefuse = true
+        } else {
+            advanceAfterTurn(session, turn.playerId)
+        }
+    }
+
+    private fun applyDefuseEffect(session: GameSession, turn: Turn.Defuse) {
+        val position = turn.insertPosition.coerceAtMost(session.drawPile.size)
+        session.drawPile.add(position, CardType.EXPLODING_KITTEN)
+
+        session.mustDefuse = false
+        switchToOpponent(session, turn.playerId)
+    }
+
+    private fun applyAttackEffect(session: GameSession, turn: Turn.Attack) {
+        val opponent = getOpponent(session, turn.playerId) ?: return
+        session.attackTurnsRemaining += 2
+        session.whoseTurn = opponent
+    }
+
+    private fun applySkipEffect(session: GameSession, turn: Turn.Skip) {
+        advanceAfterTurn(session, turn.playerId)
+    }
+
+    private fun applyShuffleEffect(session: GameSession, turn: Turn.Shuffle) {
+        session.drawPile.clear()
+        session.drawPile.addAll(turn.newDrawPile)
+    }
+
+    private fun applyFavorEffect(session: GameSession, turn: Turn.Favor) {
+        val opponent = getOpponent(session, turn.playerId) ?: return
+        removeFromHand(session, opponent, turn.takenCard)
+        addToHand(session, turn.playerId, turn.takenCard)
+    }
+
+    private fun applyPlayDoubleEffect(session: GameSession, turn: Turn.PlayDouble) {
+        val opponent = getOpponent(session, turn.playerId) ?: return
+        removeFromHand(session, opponent, turn.stolenCard)
+        addToHand(session, turn.playerId, turn.stolenCard)
     }
 
     private fun getOpponent(session: GameSession, playerId: UUID): UUID? {

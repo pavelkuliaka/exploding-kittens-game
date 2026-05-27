@@ -21,6 +21,11 @@ class GamePlayView : ViewBase() {
     private val actionsPanel = VBox(6.0)
     private val inputPanel = VBox(6.0)
     private val messageLabel = Label("")
+    private var currentPlayerId: UUID? = null
+    private var currentPlayer: Player? = null
+    private var opponentId: UUID? = null
+    private var opponent: Player? = null
+    private var topCard: CardType? = null
 
     override val root = ScrollPane().apply {
         content = VBox(8.0).apply {
@@ -90,69 +95,103 @@ class GamePlayView : ViewBase() {
     }
 
     private fun refresh() {
+        if (!validateAndLoadPlayers()) return
+        if (checkMustDefuse()) return
+        refreshStatePanel()
+        refreshCurrentHandPanel()
+        refreshOpponentHandPanel()
+        refreshDiscardPanel()
+        refreshTurnsPanel()
+        refreshActionsPanel()
+    }
+
+    private fun validateAndLoadPlayers(): Boolean {
         if (session.status != GameStatus.ACTIVE) {
             messageLabel.text = "Game session is finished"
-            return
+            return false
         }
 
-        val currentPlayerId = session.whoseTurn ?: run {
+        val pid = session.whoseTurn
+        if (pid == null) {
             messageLabel.text = "No current player is set"
-            return
+            return false
         }
-        val currentPlayer = AppDependencies.playerRepository.getPlayer(currentPlayerId) ?: return
-        val opponentId = session.participants.first { it != currentPlayerId }
-        val opponent = AppDependencies.playerRepository.getPlayer(opponentId) ?: return
-        val topCard = if (session.drawPile.isNotEmpty()) session.drawPile.first() else null
+        currentPlayerId = pid
 
-        if (session.mustDefuse) {
-            val hand = session.playerHands[currentPlayerId] ?: mutableMapOf()
-            if ((hand[CardType.DEFUSE] ?: 0) < 1) {
-                showGameOver("BOOM! ${currentPlayer.name} drew an EXPLODING KITTEN " +
-                        "and has no DEFUSE!\n${opponent.name} WINS!")
-                return
-            }
+        val cp = AppDependencies.playerRepository.getPlayer(pid)
+        if (cp == null) return false
+        currentPlayer = cp
+
+        opponentId = session.participants.first { it != pid }
+
+        val op = AppDependencies.playerRepository.getPlayer(opponentId!!)
+        if (op == null) return false
+        opponent = op
+
+        topCard = if (session.drawPile.isNotEmpty()) session.drawPile.first() else null
+        return true
+    }
+
+    private fun checkMustDefuse(): Boolean {
+        if (!session.mustDefuse) return false
+        val hand = session.playerHands[currentPlayerId!!] ?: mutableMapOf()
+        if ((hand[CardType.DEFUSE] ?: 0) < 1) {
+            showGameOver("BOOM! ${currentPlayer!!.name} drew an EXPLODING KITTEN " +
+                    "and has no DEFUSE!\n${opponent!!.name} WINS!")
+            return true
         }
+        return false
+    }
 
+    private fun refreshStatePanel() {
         statePanel.children.clear()
         if (session.mustDefuse) {
-            statePanel.children.add(Label("${currentPlayer.name} MUST DEFUSE").apply {
+            statePanel.children.add(Label("${currentPlayer!!.name} MUST DEFUSE").apply {
                 styleClass.add("must-defuse")
             })
         } else {
-            statePanel.children.add(Label("Turn: ${currentPlayer.name} (attack turns " +
+            statePanel.children.add(Label("Turn: ${currentPlayer!!.name} (attack turns " +
                     "remaining: ${session.attackTurnsRemaining})"))
         }
         statePanel.children.add(Label("Draw pile: ${session.drawPile.size} cards${if (topCard != null) " " +
                 "(top: $topCard)" else ""}"))
+    }
 
+    private fun refreshCurrentHandPanel() {
         currentHandPanel.children.clear()
-        currentHandPanel.children.add(Label("${currentPlayer.name}:").apply {
+        currentHandPanel.children.add(Label("${currentPlayer!!.name}:").apply {
             style = "-fx-font-weight: bold; -fx-font-size: 14px;"
         })
-        val curHand = session.playerHands[currentPlayerId] ?: mutableMapOf()
+        val curHand = session.playerHands[currentPlayerId!!] ?: mutableMapOf()
         if (curHand.isEmpty()) currentHandPanel.children.add(Label("(empty)"))
         else curHand.forEach { (type, count) -> currentHandPanel.children.add(Label("$type ($count)").apply {
             styleClass.add("hand-label")
         }) }
+    }
 
+    private fun refreshOpponentHandPanel() {
         opponentHandPanel.children.clear()
-        opponentHandPanel.children.add(Label("${opponent.name}:").apply {
+        opponentHandPanel.children.add(Label("${opponent!!.name}:").apply {
             style = "-fx-font-weight: bold; -fx-font-size: 14px;"
         })
-        val oppHand = session.playerHands[opponentId] ?: mutableMapOf()
+        val oppHand = session.playerHands[opponentId!!] ?: mutableMapOf()
         if (oppHand.isEmpty()) opponentHandPanel.children.add(Label("(empty)"))
         else oppHand.forEach { (type, count) -> opponentHandPanel.children.add(Label("$type ($count)").apply {
             styleClass.add("opponent-hand-label")
         }) }
+    }
 
+    private fun refreshDiscardPanel() {
         discardPanel.children.clear()
         if (session.discardPile.isEmpty()) discardPanel.children.add(Label("(empty)"))
-        else session.discardPile.forEach {
-                (type, count) -> discardPanel.children.add(Label("$type ($count)").apply {
-            styleClass.add("discard-label")
-        })
+        else session.discardPile.forEach { (type, count) ->
+            discardPanel.children.add(Label("$type ($count)").apply {
+                styleClass.add("discard-label")
+            })
         }
+    }
 
+    private fun refreshTurnsPanel() {
         turnsPanel.children.clear()
         if (session.turns.isEmpty()) turnsPanel.children.add(Label("(none)"))
         else {
@@ -164,19 +203,21 @@ class GamePlayView : ViewBase() {
                 turnsPanel.children.add(Label("  $turnNum. ${turnPlayer?.name}: ${turnDescription(turn)}"))
             }
         }
+    }
 
+    private fun refreshActionsPanel() {
         actionsPanel.children.clear()
         inputPanel.children.clear()
         inputPanel.isVisible = false
 
-        val actions = buildActions(session, currentPlayerId, opponentId, AppDependencies.playerRepository)
+        val actions = buildActions(session, currentPlayerId!!, opponentId!!, AppDependencies.playerRepository)
         if (actions.isEmpty()) {
             actionsPanel.children.add(Label("No actions available"))
         } else {
             actions.forEachIndexed { idx, action ->
                 actionsPanel.children.add(Button("${idx + 1}. ${action.label}").apply {
                     styleClass.add("action-button")
-                    setOnAction { handleAction(action, currentPlayerId, opponentId) }
+                    setOnAction { handleAction(action, currentPlayerId!!, opponentId!!) }
                 })
             }
         }
@@ -338,27 +379,29 @@ class GamePlayView : ViewBase() {
         val pool = session.drawPile.toMutableList()
         var confirmed = false
 
-        val pileBox = VBox(4.0); val poolBox = VBox(4.0); val choiceField = TextField()
+        dialog.scene = buildShuffleDialogScene(newPile, pool, dialog) { confirmed = true }
+        dialog.showAndWait()
+
+        if (confirmed) doTurn(Turn.Shuffle(playerId, newPile.toList()))
+    }
+
+    private fun buildShuffleDialogScene(
+        newPile: MutableList<CardType>,
+        pool: MutableList<CardType>,
+        dialog: Stage,
+        onConfirm: () -> Unit,
+    ): Scene {
+        val pileBox = VBox(4.0)
+        val poolBox = VBox(4.0)
+        val choiceField = TextField()
 
         fun update() {
-            pileBox.children.clear()
-            pileBox.children.add(Label("New pile (${newPile.size} cards):").apply {
-                style = "-fx-font-weight: bold;"
-            })
-            if (newPile.isEmpty()) pileBox.children.add(Label("(empty)"))
-            else newPile.forEachIndexed { i, c -> pileBox.children.add(Label("  ${i + 1}. $c")) }
-
-            val g = pool.groupBy { it }.entries.toList()
-            poolBox.children.clear()
-            poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply {
-                style = "-fx-font-weight: bold;"
-            })
-            if (g.isEmpty()) poolBox.children.add(Label("(empty)"))
-            else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})"))}
+            refreshPileBox(pileBox, newPile)
+            refreshPoolBox(poolBox, pool)
         }
         update()
 
-        dialog.scene = Scene(VBox(10.0).apply {
+        return Scene(VBox(10.0).apply {
             padding = Insets(15.0)
             children.addAll(
                 Label("SHUFFLE DRAW PILE").apply { styleClass.add("title") },
@@ -367,33 +410,71 @@ class GamePlayView : ViewBase() {
                     children.addAll(
                         choiceField.apply { promptText = "#"; prefWidth = 60.0 },
                         Button("Add from pool").apply {
-                            setOnAction {
-                                val g = pool.groupBy { it }.entries.toList()
-                                if (g.isEmpty()) return@setOnAction
-                                val c = choiceField.text.toIntOrNull() ?: return@setOnAction
-                                if (c !in 1..g.size) return@setOnAction
-                                val card = g[c - 1].key; val idx = pool.indexOf(card)
-                                if (idx >= 0) {
-                                    pool.removeAt(idx)
-                                    newPile.add(card)
-                                    choiceField.text = ""; update()
-                                }
-                            }
+                            setOnAction { addCardFromPoolToNewPile(choiceField, pool, newPile, ::update) }
                         },
                         Button("Reset").apply {
-                            setOnAction { newPile.forEach { pool.add(it) }; newPile.clear(); update() }
+                            setOnAction { resetShufflePiles(pool, newPile); update() }
                         },
                         Button("Confirm").apply {
-                            setOnAction { if (pool.isEmpty()) { confirmed = true; dialog.close() } }
+                            setOnAction {
+                                if (pool.isEmpty()) {
+                                    onConfirm()
+                                    dialog.close()
+                                }
+                            }
                         },
                         Button("Cancel").apply { setOnAction { dialog.close() } },
                     )
                 },
             )
         })
-        dialog.showAndWait()
+    }
 
-        if (confirmed) doTurn(Turn.Shuffle(playerId, newPile.toList()))
+    private fun addCardFromPoolToNewPile(
+        choiceField: TextField,
+        pool: MutableList<CardType>,
+        newPile: MutableList<CardType>,
+        update: () -> Unit,
+    ) {
+        val g = pool.groupBy { it }.entries.toList()
+        if (g.isEmpty()) return
+        val c = choiceField.text.toIntOrNull() ?: return
+        if (c !in 1..g.size) return
+        val card = g[c - 1].key
+        val idx = pool.indexOf(card)
+        if (idx >= 0) {
+            pool.removeAt(idx)
+            newPile.add(card)
+            choiceField.text = ""
+            update()
+        }
+    }
+
+    private fun resetShufflePiles(
+        pool: MutableList<CardType>,
+        newPile: MutableList<CardType>,
+    ) {
+        newPile.forEach { pool.add(it) }
+        newPile.clear()
+    }
+
+    private fun refreshPileBox(pileBox: VBox, newPile: List<CardType>) {
+        pileBox.children.clear()
+        pileBox.children.add(Label("New pile (${newPile.size} cards):").apply {
+            style = "-fx-font-weight: bold;"
+        })
+        if (newPile.isEmpty()) pileBox.children.add(Label("(empty)"))
+        else newPile.forEachIndexed { i, c -> pileBox.children.add(Label("  ${i + 1}. $c")) }
+    }
+
+    private fun refreshPoolBox(poolBox: VBox, pool: List<CardType>) {
+        val g = pool.groupBy { it }.entries.toList()
+        poolBox.children.clear()
+        poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply {
+            style = "-fx-font-weight: bold;"
+        })
+        if (g.isEmpty()) poolBox.children.add(Label("(empty)"))
+        else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})")) }
     }
 
     private fun executeAction(action: ActionOption, currentPlayerId: UUID) {
