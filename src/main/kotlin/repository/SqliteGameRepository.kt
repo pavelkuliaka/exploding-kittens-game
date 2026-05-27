@@ -24,41 +24,54 @@ class SqliteGameRepository(private val connection: Connection) : IGameRepository
     private val snapshotType = object : TypeToken<GameStateSnapshot>() {}.type
 
     override fun addSession(gameSession: GameSession) {
-        connection.prepareStatement(
-            "DELETE FROM session_participants WHERE session_id = ?"
-        ).use { stmt ->
-            stmt.setString(1, gameSession.id.toString())
+        deleteParticipants(gameSession.id)
+        insertGameSession(gameSession)
+        insertParticipants(gameSession.id, gameSession.participants)
+    }
+
+    private fun deleteParticipants(sessionId: UUID) {
+        connection.prepareStatement(DatabaseManager.SQL_DELETE_SESSION_PARTICIPANTS).use { stmt ->
+            stmt.setString(1, sessionId.toString())
             stmt.executeUpdate()
         }
+    }
 
-        val sql = """
-            INSERT OR REPLACE INTO game_sessions
-            (id, status, whose_turn, attack_turns_remaining, must_defuse, winner_id,
-             turns, draw_pile, discard_pile, player_hands, initial_state)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        connection.prepareStatement(sql).use { stmt ->
+    private fun insertGameSession(gameSession: GameSession) {
+        connection.prepareStatement(DatabaseManager.SQL_INSERT_GAME_SESSION).use { stmt ->
             stmt.setString(1, gameSession.id.toString())
             stmt.setString(2, gameSession.status.name)
             stmt.setString(3, gameSession.whoseTurn?.toString())
             stmt.setInt(4, gameSession.attackTurnsRemaining)
             stmt.setBoolean(5, gameSession.mustDefuse)
             stmt.setString(6, gameSession.winnerId?.toString())
-            stmt.setString(7, gson.toJson(gameSession.turns.toList(), listOfTurns))
-            stmt.setString(8, gson.toJson(gameSession.drawPile.toList(), listOfCardType))
-            stmt.setString(9, gson.toJson(gameSession.discardPile, mapCardTypeInt))
+            stmt.setString(7, gson.toJson(
+                gameSession.turns.toList(),
+                listOfTurns
+            ))
+            stmt.setString(8, gson.toJson(
+                gameSession.drawPile.toList(),
+                listOfCardType
+            ))
+            stmt.setString(9, gson.toJson(
+                gameSession.discardPile,
+                mapCardTypeInt
+            ))
             stmt.setString(10, gson.toJson(
                 gameSession.playerHands.mapValues { it.value.toMap() },
                 mapUuidMapCardTypeInt
             ))
-            stmt.setString(11, gameSession.initialState?.let { gson.toJson(it, snapshotType) })
+            stmt.setString(11, gameSession.initialState?.let {
+                gson.toJson(it,
+                    snapshotType)
+            })
             stmt.executeUpdate()
         }
+    }
 
-        val pSql = "INSERT OR IGNORE INTO session_participants (session_id, player_id) VALUES (?, ?)"
-        connection.prepareStatement(pSql).use { stmt ->
-            for (pid in gameSession.participants) {
-                stmt.setString(1, gameSession.id.toString())
+    private fun insertParticipants(sessionId: UUID, participants: Set<UUID>) {
+        connection.prepareStatement(DatabaseManager.SQL_INSERT_SESSION_PARTICIPANT).use { stmt ->
+            for (pid in participants) {
+                stmt.setString(1, sessionId.toString())
                 stmt.setString(2, pid.toString())
                 stmt.addBatch()
             }
@@ -67,53 +80,59 @@ class SqliteGameRepository(private val connection: Connection) : IGameRepository
     }
 
     override fun getSession(sessionId: UUID): GameSession? {
-        val sql = "SELECT * FROM game_sessions WHERE id = ?"
-        connection.prepareStatement(sql).use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_GET_GAME_SESSION).use { stmt ->
             stmt.setString(1, sessionId.toString())
             val rs = stmt.executeQuery()
             if (!rs.next()) return null
-
-            val participants = mutableSetOf<UUID>()
-            connection.prepareStatement(
-                "SELECT player_id FROM session_participants WHERE session_id = ?"
-            ).use { pStmt ->
-                pStmt.setString(1, sessionId.toString())
-                val pRs = pStmt.executeQuery()
-                while (pRs.next()) {
-                    participants.add(UUID.fromString(pRs.getString("player_id")))
-                }
-            }
-
-            val handsJson = rs.getString("player_hands")
-            val handsRaw: Map<UUID, Map<CardType, Int>> = gson.fromJson(handsJson, mapUuidMapCardTypeInt)
-
-            return GameSession(
-                id = sessionId,
-                participants = participants,
-                turns = gson.fromJson<List<Turn>>(rs.getString("turns"), listOfTurns).toMutableList(),
-                discardPile = gson.fromJson<Map<CardType, Int>>(rs.getString("discard_pile"), mapCardTypeInt).toMutableMap(),
-                drawPile = gson.fromJson<List<CardType>>(rs.getString("draw_pile"), listOfCardType).toMutableList(),
-                status = GameStatus.valueOf(rs.getString("status")),
-                whoseTurn = rs.getString("whose_turn")?.let { UUID.fromString(it) },
-                playerHands = handsRaw.mapValues { it.value.toMutableMap() }.toMutableMap(),
-                initialState = rs.getString("initial_state")?.let { gson.fromJson(it, snapshotType) },
-                attackTurnsRemaining = rs.getInt("attack_turns_remaining"),
-                mustDefuse = rs.getBoolean("must_defuse"),
-                winnerId = rs.getString("winner_id")?.let { UUID.fromString(it) }
-            )
+            return mapToGameSession(sessionId, rs)
         }
     }
 
-    override fun removeSession(sessionId: UUID) {
-        connection.prepareStatement(
-            "DELETE FROM session_participants WHERE session_id = ?"
-        ).use { stmt ->
+    private fun fetchParticipants(sessionId: UUID): Set<UUID> {
+        val participants = mutableSetOf<UUID>()
+        connection.prepareStatement(DatabaseManager.SQL_GET_SESSION_PARTICIPANTS).use { stmt ->
             stmt.setString(1, sessionId.toString())
-            stmt.executeUpdate()
+            val rs = stmt.executeQuery()
+            while (rs.next()) {
+                participants.add(UUID.fromString(rs.getString("player_id")))
+            }
         }
-        connection.prepareStatement(
-            "DELETE FROM game_sessions WHERE id = ?"
-        ).use { stmt ->
+        return participants
+    }
+
+    private fun mapToGameSession(sessionId: UUID, rs: java.sql.ResultSet): GameSession {
+        val handsJson = rs.getString("player_hands")
+        val handsRaw: Map<UUID, Map<CardType, Int>> = gson.fromJson(handsJson, mapUuidMapCardTypeInt)
+        return GameSession(
+            id = sessionId,
+            participants = fetchParticipants(sessionId),
+            turns = gson.fromJson<List<Turn>>(
+                rs.getString("turns"),
+                listOfTurns
+            ).toMutableList(),
+            discardPile = gson.fromJson<Map<CardType, Int>>(
+                rs.getString("discard_pile"),
+                mapCardTypeInt
+            ).toMutableMap(),
+            drawPile = gson.fromJson<List<CardType>>(
+                rs.getString("draw_pile"),
+                listOfCardType
+            ).toMutableList(),
+            status = GameStatus.valueOf(rs.getString("status")),
+            whoseTurn = rs.getString("whose_turn")?.let { UUID.fromString(it) },
+            playerHands = handsRaw.mapValues { it.value.toMutableMap() }.toMutableMap(),
+            initialState = rs.getString(
+                "initial_state"
+            )?.let { gson.fromJson(it, snapshotType) },
+            attackTurnsRemaining = rs.getInt("attack_turns_remaining"),
+            mustDefuse = rs.getBoolean("must_defuse"),
+            winnerId = rs.getString("winner_id")?.let { UUID.fromString(it) }
+        )
+    }
+
+    override fun removeSession(sessionId: UUID) {
+        deleteParticipants(sessionId)
+        connection.prepareStatement(DatabaseManager.SQL_DELETE_GAME_SESSION).use { stmt ->
             stmt.setString(1, sessionId.toString())
             stmt.executeUpdate()
         }
@@ -121,7 +140,7 @@ class SqliteGameRepository(private val connection: Connection) : IGameRepository
 
     override fun getAllSessions(): List<GameSession> {
         val ids = mutableListOf<UUID>()
-        connection.prepareStatement("SELECT id FROM game_sessions").use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_GET_ALL_GAME_SESSION_IDS).use { stmt ->
             val rs = stmt.executeQuery()
             while (rs.next()) {
                 ids.add(UUID.fromString(rs.getString("id")))

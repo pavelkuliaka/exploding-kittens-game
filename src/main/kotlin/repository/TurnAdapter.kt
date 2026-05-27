@@ -48,7 +48,9 @@ class TurnAdapter : JsonSerializer<Turn>, JsonDeserializer<Turn> {
             "Attack" -> Turn.Attack(playerId)
             "Skip" -> Turn.Skip(playerId)
             "SeeTheFuture" -> Turn.SeeTheFuture(playerId)
-            "Shuffle" -> Turn.Shuffle(playerId, obj.getAsJsonArray("newDrawPile").map { CardType.valueOf(it.asString) })
+            "Shuffle" -> Turn.Shuffle(playerId, obj.getAsJsonArray("newDrawPile").map {
+                CardType.valueOf(it.asString)
+            })
             "Favor" -> Turn.Favor(playerId, CardType.valueOf(obj.get("takenCard").asString))
             "Pass" -> Turn.Pass(playerId)
             "PlayDouble" -> Turn.PlayDouble(

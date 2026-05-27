@@ -338,27 +338,29 @@ class GamePlayView : ViewBase() {
         val pool = session.drawPile.toMutableList()
         var confirmed = false
 
-        val pileBox = VBox(4.0); val poolBox = VBox(4.0); val choiceField = TextField()
+        dialog.scene = buildShuffleDialogScene(newPile, pool, dialog) { confirmed = true }
+        dialog.showAndWait()
+
+        if (confirmed) doTurn(Turn.Shuffle(playerId, newPile.toList()))
+    }
+
+    private fun buildShuffleDialogScene(
+        newPile: MutableList<CardType>,
+        pool: MutableList<CardType>,
+        dialog: Stage,
+        onConfirm: () -> Unit,
+    ): Scene {
+        val pileBox = VBox(4.0)
+        val poolBox = VBox(4.0)
+        val choiceField = TextField()
 
         fun update() {
-            pileBox.children.clear()
-            pileBox.children.add(Label("New pile (${newPile.size} cards):").apply {
-                style = "-fx-font-weight: bold;"
-            })
-            if (newPile.isEmpty()) pileBox.children.add(Label("(empty)"))
-            else newPile.forEachIndexed { i, c -> pileBox.children.add(Label("  ${i + 1}. $c")) }
-
-            val g = pool.groupBy { it }.entries.toList()
-            poolBox.children.clear()
-            poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply {
-                style = "-fx-font-weight: bold;"
-            })
-            if (g.isEmpty()) poolBox.children.add(Label("(empty)"))
-            else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})"))}
+            refreshPileBox(pileBox, newPile)
+            refreshPoolBox(poolBox, pool)
         }
         update()
 
-        dialog.scene = Scene(VBox(10.0).apply {
+        return Scene(VBox(10.0).apply {
             padding = Insets(15.0)
             children.addAll(
                 Label("SHUFFLE DRAW PILE").apply { styleClass.add("title") },
@@ -367,33 +369,71 @@ class GamePlayView : ViewBase() {
                     children.addAll(
                         choiceField.apply { promptText = "#"; prefWidth = 60.0 },
                         Button("Add from pool").apply {
-                            setOnAction {
-                                val g = pool.groupBy { it }.entries.toList()
-                                if (g.isEmpty()) return@setOnAction
-                                val c = choiceField.text.toIntOrNull() ?: return@setOnAction
-                                if (c !in 1..g.size) return@setOnAction
-                                val card = g[c - 1].key; val idx = pool.indexOf(card)
-                                if (idx >= 0) {
-                                    pool.removeAt(idx)
-                                    newPile.add(card)
-                                    choiceField.text = ""; update()
-                                }
-                            }
+                            setOnAction { addCardFromPoolToNewPile(choiceField, pool, newPile, ::update) }
                         },
                         Button("Reset").apply {
-                            setOnAction { newPile.forEach { pool.add(it) }; newPile.clear(); update() }
+                            setOnAction { resetShufflePiles(pool, newPile); update() }
                         },
                         Button("Confirm").apply {
-                            setOnAction { if (pool.isEmpty()) { confirmed = true; dialog.close() } }
+                            setOnAction {
+                                if (pool.isEmpty()) {
+                                    onConfirm()
+                                    dialog.close()
+                                }
+                            }
                         },
                         Button("Cancel").apply { setOnAction { dialog.close() } },
                     )
                 },
             )
         })
-        dialog.showAndWait()
+    }
 
-        if (confirmed) doTurn(Turn.Shuffle(playerId, newPile.toList()))
+    private fun addCardFromPoolToNewPile(
+        choiceField: TextField,
+        pool: MutableList<CardType>,
+        newPile: MutableList<CardType>,
+        update: () -> Unit,
+    ) {
+        val g = pool.groupBy { it }.entries.toList()
+        if (g.isEmpty()) return
+        val c = choiceField.text.toIntOrNull() ?: return
+        if (c !in 1..g.size) return
+        val card = g[c - 1].key
+        val idx = pool.indexOf(card)
+        if (idx >= 0) {
+            pool.removeAt(idx)
+            newPile.add(card)
+            choiceField.text = ""
+            update()
+        }
+    }
+
+    private fun resetShufflePiles(
+        pool: MutableList<CardType>,
+        newPile: MutableList<CardType>,
+    ) {
+        newPile.forEach { pool.add(it) }
+        newPile.clear()
+    }
+
+    private fun refreshPileBox(pileBox: VBox, newPile: List<CardType>) {
+        pileBox.children.clear()
+        pileBox.children.add(Label("New pile (${newPile.size} cards):").apply {
+            style = "-fx-font-weight: bold;"
+        })
+        if (newPile.isEmpty()) pileBox.children.add(Label("(empty)"))
+        else newPile.forEachIndexed { i, c -> pileBox.children.add(Label("  ${i + 1}. $c")) }
+    }
+
+    private fun refreshPoolBox(poolBox: VBox, pool: List<CardType>) {
+        val g = pool.groupBy { it }.entries.toList()
+        poolBox.children.clear()
+        poolBox.children.add(Label("Remaining pool (${pool.size} cards):").apply {
+            style = "-fx-font-weight: bold;"
+        })
+        if (g.isEmpty()) poolBox.children.add(Label("(empty)"))
+        else g.forEachIndexed { i, e -> poolBox.children.add(Label("  ${i + 1}. ${e.key} (${e.value.size})")) }
     }
 
     private fun executeAction(action: ActionOption, currentPlayerId: UUID) {

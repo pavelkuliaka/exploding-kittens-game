@@ -7,12 +7,7 @@ import java.util.UUID
 
 class SqlitePlayerRepository(private val connection: Connection) : IPlayerRepository {
     override fun addPlayer(player: Player) {
-        val sql = """
-            INSERT OR REPLACE INTO players
-            (id, name, is_playing, total_games, wins, losses, win_rate, defused)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """
-        connection.prepareStatement(sql).use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_INSERT_PLAYER).use { stmt ->
             stmt.setString(1, player.id.toString())
             stmt.setString(2, player.name)
             stmt.setBoolean(3, player.isPlaying)
@@ -26,8 +21,7 @@ class SqlitePlayerRepository(private val connection: Connection) : IPlayerReposi
     }
 
     override fun getPlayer(playerId: UUID): Player? {
-        val sql = "SELECT * FROM players WHERE id = ?"
-        connection.prepareStatement(sql).use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_GET_PLAYER).use { stmt ->
             stmt.setString(1, playerId.toString())
             val rs = stmt.executeQuery()
             if (!rs.next()) return null
@@ -36,7 +30,7 @@ class SqlitePlayerRepository(private val connection: Connection) : IPlayerReposi
     }
 
     override fun removePlayer(playerId: UUID) {
-        connection.prepareStatement("DELETE FROM players WHERE id = ?").use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_DELETE_PLAYER).use { stmt ->
             stmt.setString(1, playerId.toString())
             stmt.executeUpdate()
         }
@@ -44,7 +38,7 @@ class SqlitePlayerRepository(private val connection: Connection) : IPlayerReposi
 
     override fun getAllPlayers(): List<Player> {
         val result = mutableListOf<Player>()
-        connection.prepareStatement("SELECT * FROM players").use { stmt ->
+        connection.prepareStatement(DatabaseManager.SQL_GET_ALL_PLAYERS).use { stmt ->
             val rs = stmt.executeQuery()
             while (rs.next()) {
                 result.add(mapToPlayer(rs))
