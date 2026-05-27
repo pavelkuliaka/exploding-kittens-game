@@ -1,0 +1,26 @@
+{
+  "ee7291a1-30ec-4653-bed6-bc45b1a11de9": {
+    "id": "ee7291a1-30ec-4653-bed6-bc45b1a11de9",
+    "name": "Alice",
+    "isPlaying": true,
+    "stats": {
+      "totalGames": 0,
+      "wins": 0,
+      "losses": 0,
+      "winRate": 0,
+      "defused": 0
+    }
+  },
+  "8f8ab429-2b6e-41e5-b7cc-37680a3751e2": {
+    "id": "8f8ab429-2b6e-41e5-b7cc-37680a3751e2",
+    "name": "Bob",
+    "isPlaying": true,
+    "stats": {
+      "totalGames": 0,
+      "wins": 0,
+      "losses": 0,
+      "winRate": 0,
+      "defused": 0
+    }
+  }
+}
